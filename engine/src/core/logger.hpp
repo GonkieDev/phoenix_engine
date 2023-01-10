@@ -46,7 +46,7 @@ typedef enum log_level {
 #ifdef LOG_TRACE_ENABLED
 #define PXTRACE(message, ...) LogOutput(LOG_LEVEL_TRACE, message, ##__VA_ARGS__)
 #else
-#define PXTRACE(message, ...
+#define PXTRACE(message, ...)
 #endif // !LOG_TRACE_ENABLED
 
 
