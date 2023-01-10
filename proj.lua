@@ -47,3 +47,4 @@ create_vim_proj_command("<F10>", CompileAll)
 -- vim.api.nvim_set_keymap("n", "<F6>", 
 --     "<cmd>wa<cr><cmd>set makeprg=.\\compile_shaders.bat<cr><cmd>Make<cr>",
 --     { noremap = true, silent = true });
+

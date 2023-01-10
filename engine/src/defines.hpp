@@ -23,6 +23,10 @@ typedef i8  b8;
 
 static_assert(sizeof(f32) == 4, "F32 must me 4 bytes!");
 
+#define global_var static
+#define local_persist static
+#define internal static
+
 
 // PXAPI
 #ifdef PXEXPORT
@@ -53,6 +57,7 @@ static_assert(sizeof(f32) == 4, "F32 must me 4 bytes!");
 #define MEGABYTES(x) (KILOBYTES(x) * 1000)
 #define GIGABYTES(x) (MEGABYTES(x) * 1000)
 
+#define ArrayLen(arr) (sizeof((arr))/sizeof((arr)[0]))
 
 #define MIN(x, y) (x < y ? x : y)
 #define MAX(x, y) (x > y ? x : y)

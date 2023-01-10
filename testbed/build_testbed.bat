@@ -8,7 +8,9 @@ set src_path=./testbed/src/
 set engine_path=./bin/debug/
 set engine_inc_path=./engine/src/
 
-set compiler_flags=-g 
+set ignoreWarns=-Wno-writable-strings
+
+set compiler_flags=-g  %ignoreWarns%
 REM -Wall -Werror
 set include_flags=-I%engine_inc_path%
 set linker_flags=-L%engine_path% -lphoenix.lib

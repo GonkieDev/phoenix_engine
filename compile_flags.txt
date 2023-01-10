@@ -8,3 +8,4 @@
 -IC:\VulkanSDK\1.3.236.0/Include
 -I./engine/src/
 -l./bin/debug/phoenix.lib
+-Wno-writable-strings
