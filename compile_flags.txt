@@ -1,0 +1,10 @@
+-shared
+-Wvarargs
+-Wall
+-Werror
+-D_DEBUG
+-DPXEXPORT
+-D_CRT_SECURE_NO_WARNINGS
+-IC:\VulkanSDK\1.3.236.0/Include
+-I./engine/src/
+-l./bin/debug/phoenix.lib
