@@ -1,7 +1,5 @@
 -shared
--Wvarargs
 -Wall
--Werror
 -D_DEBUG
 -DPXEXPORT
 -D_CRT_SECURE_NO_WARNINGS
@@ -9,3 +7,5 @@
 -I./engine/src/
 -l./bin/debug/phoenix.lib
 -Wno-writable-strings
+-m64
+"-Wl,/sybsystem:windows"

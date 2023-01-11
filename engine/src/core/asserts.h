@@ -12,7 +12,7 @@
 #endif 
 
 // NOTE: implementation in "assets.h"
-PXAPI void ReportAssertionFailure(char *expression, char *message, char *file, i32 line);
+void ReportAssertionFailure(char *expression, char *message, char *file, i32 line);
 
 #define PX_ASSERT(expr)                                                     \
     {                                                                       \

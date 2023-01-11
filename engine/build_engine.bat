@@ -12,7 +12,7 @@ REM -Werror
 set compiler_flags=-g -c -m64 -Wvarargs -Wall %ignoreWarns%
 set include_flags=-I%VULKAN_SDK%/Include
 set linker_flags=-luser32 -lvulkan-1 -L%VULKAN_SDK%/Lib
-set defines=-D_DEBUG -DPXEXPORT -D_CRT_SECURE_NO_WARNINGS
+set defines=-D_DEBUG -D_CRT_SECURE_NO_WARNINGS
 
 if not exist %build_path% mkdir %build_path%
 

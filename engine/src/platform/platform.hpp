@@ -14,6 +14,6 @@ struct platform_startup_info
     u32 height;
 };
 
-PXAPI b8 PlatformStartup(platform_startup_info info, platform_state *platformState);
+b8 PlatformStartup(platform_startup_info info, platform_state *platformState);
 
 void PlatformShutdown(platform_state *platformState);

@@ -1,5 +1,12 @@
 #pragma once
 
+// NOTE: this is so that linker can find wWinMain func
+#ifdef _WIN64
+#pragma comment(linker, "/include:wWinMain")
+#else
+#error "If compiling on windows, must be 64bit mode!"
+#endif
+
 #include <stdint.h>
 
 typedef int8_t  i8;
@@ -26,28 +33,6 @@ static_assert(sizeof(f32) == 4, "F32 must me 4 bytes!");
 #define global_var static
 #define local_persist static
 #define internal static
-
-
-// PXAPI
-#ifdef PXEXPORT
-
-// Exports
-#ifdef _MSC_VER
-#define PXAPI __declspec(dllexport)
-#else
-#define PXAPI __attribute__((visibility("default")))
-#endif // !_MSC_VER
-
-#else // PXEXPORT
-
-// Imports
-/* #ifdef _MSC_VER */
-/* #define PXAPI __declspec(dllimport) */
-/* #else */
-#define PXAPI
-/* #endif // !_MSC_VER */
-
-#endif // !PXEXPORT
 
 #define KIBIBYTES(x) (x * 1024)
 #define MEBIBYTES(x) (KIBIBYTES(x) * 1024)

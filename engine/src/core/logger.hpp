@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../defines.hpp"
 
 #define LOG_WARN_ENABLED 1
@@ -50,6 +52,6 @@ typedef enum log_level {
 #endif // !LOG_TRACE_ENABLED
 
 
-PXAPI void LogOutput(log_level level, char *message, ...);
+void LogOutput(log_level level, char *message, ...);
 internal b8 InitLogging();
 internal void ShutdownLogging();
