@@ -1,6 +1,7 @@
 #pragma once
 
-struct memory_zone
+// TODO
+struct memory_arena
 {
 
 };

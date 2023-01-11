@@ -1,19 +1,21 @@
 #pragma once
 
+#include <vulkan/vulkan.h>
+
 #include "../defines.hpp"
+#include "../core/memory_arenas.hpp"
 
 struct platform_state
 {
-    void *internalState;
-};
-
-struct platform_startup_info
-{
-    char *appName;
+    b32 quitRequest;
+    b32 windowResized;
     u32 width;
     u32 height;
+    VkSurfaceKHR surface;
 };
 
-b8 PlatformStartup(platform_startup_info info, platform_state *platformState);
+b8 PlatformPumpMessages(platform_state *platformState);
 
-void PlatformShutdown(platform_state *platformState);
+// TODO
+void *PlatformAllocateMemory(u64 size, b8 aligned);
+void PlatformFreeMemory(void *memory, b8 aligned);

@@ -1,5 +1,18 @@
 #pragma once
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#ifndef UNICODE
+#define UNICODE
+#endif
+#ifndef _UNICODE
+#define _UNICODE
+#endif
+
+#define VK_USE_PLATFORM_WIN32_KHR
+
 // NOTE: this is so that linker can find wWinMain func
 #ifdef _WIN64
 #pragma comment(linker, "/include:wWinMain")
@@ -28,7 +41,8 @@ typedef i8  b8;
 
 // typedef u32 s32; // Size in bytes
 
-static_assert(sizeof(f32) == 4, "F32 must me 4 bytes!");
+static_assert(sizeof(f32) == 4, "f32 must me 4 bytes!");
+static_assert(sizeof(f64) == 8, "f64 must me 8 bytes!");
 
 #define global_var static
 #define local_persist static
