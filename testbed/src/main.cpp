@@ -1,7 +1,9 @@
 #include <core/logger.hpp>
 #include <core/asserts.h>
 
-int main()
+#include <win32_phoenix.cpp>
+
+int cum()
 {
     PXFATAL("omgomgomg %d", 32);
     PXTRACE("omgomgomg %d", 25);

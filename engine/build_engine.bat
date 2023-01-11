@@ -19,8 +19,7 @@ set defines=-D_DEBUG -DPXEXPORT -D_CRT_SECURE_NO_WARNINGS
 if not exist %build_path% mkdir %build_path%
 
 echo Building Engine: %defines%
-REM clang %src_path%win32_platform.cpp -o %build_path%phoenix.dll %compiler_flags% %defines% %include_flags%
-clang %src_path%/core/logger.cpp -o %build_path%phoenix.dll %compiler_flags% %defines% %include_flags%
+clang %src_path%/platform/win32_phoenix.cpp -o %build_path%phoenix.dll %compiler_flags% %defines% %include_flags%
 
 REM For non debug copilation
 REM unset -g flag (profiler and debug information flag)
