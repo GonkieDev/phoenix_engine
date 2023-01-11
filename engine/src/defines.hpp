@@ -41,11 +41,11 @@ static_assert(sizeof(f32) == 4, "F32 must me 4 bytes!");
 #else // PXEXPORT
 
 // Imports
-#ifdef _MSC_VER
-#define PXAPI __declspec(dllimport)
-#else
+/* #ifdef _MSC_VER */
+/* #define PXAPI __declspec(dllimport) */
+/* #else */
 #define PXAPI
-#endif // !_MSC_VER
+/* #endif // !_MSC_VER */
 
 #endif // !PXEXPORT
 

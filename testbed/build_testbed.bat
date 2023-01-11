@@ -5,16 +5,15 @@ SetLocal EnableDelayedExpansion
 REM Paths are local to root directory
 set build_path=./bin/debug/
 set src_path=./testbed/src/
-set engine_path=./bin/debug/
+set engine_path=%build_path%
 set engine_inc_path=./engine/src/
 
 set ignoreWarns=-Wno-writable-strings
 
-set compiler_flags=-g %ignoreWarns%
+set compiler_flags=-g -m64 "-Wl,/subsystem:console" %ignoreWarns%
 REM -Wall -Werror
-set include_flags=-I%engine_inc_path% -I%engine_inc_path%/core/ -I%engine_inc_path%/platform/
-REM set linker_flags=-L%engine_path% -lphoenix.lib
-set linker_flags=
+set include_flags=-I%engine_inc_path%
+set linker_flags=-L%engine_path% -lphoenix.lib
 set defines=-D_DEBUG -DPXIMPORT
 
 if not exist %build_path% mkdir %build_path%
