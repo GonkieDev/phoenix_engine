@@ -1,16 +1,12 @@
 #pragma once
 
 #include "../defines.hpp"
+#include "../core/asserts.h"
+#include "../core/logger.hpp"
+#include "../core/memory_arenas.hpp"
+#include "../core/engine.hpp"
 #include "../platform/platform.hpp"
-#include "memory_arenas.hpp"
-#include "logger.hpp"
-#include "asserts.h"
 
-struct px_init_info
-{
-    u32 width = 720;
-    u32 height = 480;
-    wchar_t *gameName = L"Phoenix Engine Game";
-};
+void GameMain(platform_state_ptr platformState);
 
-b8 PXInit(px_init_info *initInfo);
+b8 PhoenixInit(u32 width, u32 height, wchar_t *applicationName, platform_state_ptr platformState);

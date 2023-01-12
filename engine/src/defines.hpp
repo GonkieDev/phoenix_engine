@@ -1,25 +1,5 @@
 #pragma once
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#ifndef UNICODE
-#define UNICODE
-#endif
-#ifndef _UNICODE
-#define _UNICODE
-#endif
-
-#define VK_USE_PLATFORM_WIN32_KHR
-
-// NOTE: this is so that linker can find wWinMain func
-#ifdef _WIN64
-#pragma comment(linker, "/include:wWinMain")
-#else
-#error "If compiling on windows, must be 64bit mode!"
-#endif
-
 #include <stdint.h>
 
 typedef int8_t  i8;
@@ -60,3 +40,37 @@ static_assert(sizeof(f64) == 8, "f64 must me 8 bytes!");
 
 #define MIN(x, y) (x < y ? x : y)
 #define MAX(x, y) (x > y ? x : y)
+
+
+// Platform detection
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+
+#define PXPLATFORM_WINDOWS 1
+#ifndef _WIN64
+#error "64-bit is required on Windows!"
+#endif
+
+#else
+#error "Platform not supported!"
+#endif
+
+#ifdef PXPLATFORM_WINDOWS
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#ifndef UNICODE
+#define UNICODE
+#endif
+#ifndef _UNICODE
+#define _UNICODE
+#endif
+
+#define VK_USE_PLATFORM_WIN32_KHR
+
+// NOTE: this is so that linker can find wWinMain func
+#pragma comment(linker, "/include:wWinMain")
+
+
+#endif // !PXPLATFORM_WINDOWS

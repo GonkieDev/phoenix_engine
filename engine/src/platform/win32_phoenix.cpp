@@ -1,12 +1,27 @@
+#include "../defines.hpp"
+#include "../core/asserts.h"
+#include "../core/logger.hpp"
+#include "../core/memory_arenas.hpp"
 #include "../core/engine.hpp"
+#include "platform.hpp"
 
 // Includes for unity build
-#include "../core/logger.cpp"
+#include "../core/engine.cpp"
 
 #include <vulkan/vulkan.h>
 
 #include <windows.h>
 #include <xinput.h>
+
+struct internal_state
+{
+    HWND hwnd;
+    HINSTANCE hinstance;
+    int nCmdShow;
+    VkSurfaceKHR surface;
+    f64 clockFrequency;
+    LARGE_INTEGER startTime;
+};
 
 //
 // Function declarations
@@ -44,30 +59,49 @@ X_INPUT_SET_STATE(XInputSetStateStub)
 global_var x_input_set_state *XInputSetState_ = XInputSetStateStub;
 #define XInputSetState XInputSetState_
 
-
 int WINAPI
 wWinMain(_In_     HINSTANCE hInstance,
          _In_opt_ HINSTANCE /* hPrevInstance */,
          _In_     LPWSTR    /* lpCmdLine */,
          _In_     int       nCmdShow)
 {
-    InitLogging();
+    internal_state internalState = {};
+    internalState.hinstance = hInstance;
+    internalState.nCmdShow = nCmdShow;
 
-    px_init_info initInfo = {};
-    PXInit(&initInfo);
+    // Timer setup
+    {
+        LARGE_INTEGER frequency;
+        QueryPerformanceFrequency(&frequency);
+        internalState.clockFrequency = 1.0 / (f64)frequency.QuadPart; 
+        QueryPerformanceCounter(&internalState.startTime);
+    }
 
     platform_state platformState = {};
-    platformState.width  = initInfo.width;
-    platformState.height = initInfo.height;
+    platformState.internalState = &internalState;
 
+    GameMain(&platformState);
+
+    // Cleanup
+    ShutdownLogging();
+
+    return 0;
+}
+
+internal b8
+PlatformInit(u32 width, u32 height, wchar_t *applicationName, platform_state_ptr platformState)
+{
+    InitLogging();
     win32LoadXInput();
+
+    internal_state *internalState = (internal_state*)platformState->internalState;
 
     // Initialize the window class.
     WNDCLASSEX windowClass    = {};
     windowClass.cbSize        = sizeof(WNDCLASSEX);
     windowClass.style         = CS_HREDRAW | CS_VREDRAW;
     windowClass.lpfnWndProc   = win32WindowProc;
-    windowClass.hInstance     = hInstance;
+    windowClass.hInstance     = internalState->hinstance;
     /* windowClass.hIcon         = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPLICATION)); */
     windowClass.hCursor       = LoadCursor(0, IDC_ARROW);
     windowClass.lpszClassName = L"PhoenixEngineWindowClass";
@@ -79,8 +113,8 @@ wWinMain(_In_     HINSTANCE hInstance,
         return 0;
     }
 
-    u32 windowWidth  = initInfo.width;
-    u32 windowHeight = initInfo.height;
+    u32 windowWidth  = width;
+    u32 windowHeight = height;
 
     u32 windowStyle   = WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX |
                         WS_THICKFRAME;
@@ -94,13 +128,13 @@ wWinMain(_In_     HINSTANCE hInstance,
     windowWidth  += borderRect.right  - borderRect.left;
     windowHeight += borderRect.bottom - borderRect.top;
 
-    HWND hwnd = CreateWindowEx(
-        windowExStyle, windowClass.lpszClassName, initInfo.gameName, windowStyle,
+    internalState->hwnd = CreateWindowEx(
+        windowExStyle, windowClass.lpszClassName, applicationName, windowStyle,
         CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight,
-        0, 0, hInstance, 0
+        0, 0, internalState->hinstance, 0
     );
 
-    if (!hwnd)
+    if (!internalState->hwnd)
     {
         MessageBoxA(0, "Window creation failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
 
@@ -108,16 +142,12 @@ wWinMain(_In_     HINSTANCE hInstance,
         return 0;
     }
 
-    SetWindowLongPtr(hwnd, 0, (LONG_PTR)(&platformState));
+    SetWindowLongPtr(internalState->hwnd, 0, (LONG_PTR)(&platformState));
 
-    ShowWindow(hwnd, nCmdShow);
+    ShowWindow(internalState->hwnd, internalState->nCmdShow);
 
-    // Cleanup
-    ShutdownLogging();
-
-    return 0;
+    return 1;
 }
-
 
 internal inline void
 win32LoadXInput()
@@ -134,62 +164,89 @@ win32LoadXInput()
     }
 }
 
+void *
+PlatformAllocateMemory(u64 size, b8 aligned)
+{
+#ifdef INTERNAL_BUILD
+        LPVOID baseAddress = (LPVOID)GIBIBYTES((u64)2000);
+#else
+        LPVOID  baseAddress = 0;
+#endif
+    void *result = VirtualAlloc(baseAddress, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+
+    return result;
+}
+
+void PlatformFreeMemory(void *memory, b8 aligned)
+{
+    if (memory)
+    {
+        VirtualFree(memory, 0, MEM_RELEASE);
+    }
+}
+
+internal void
+PlatformDebugOutput(char *message)
+{
+    OutputDebugStringA((LPCSTR)message);
+}
+
 LRESULT CALLBACK 
 win32WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    LRESULT result = 0;
-    platform_state *platformState = (platform_state*)GetWindowLongPtr(hwnd, 0);
+    /* platform_state *platformState = (platform_state*)GetWindowLongPtr(hwnd, 0); */
     switch (uMsg)
     {
-        // NOTE: Enable this once input has been finished to make sure we don't miss any buttons
-#if 0
+        case WM_ERASEBKGND:
+            // NOTE: erasing will be handled by application to prevent flicker
+            return 1;
+
+        case WM_CLOSE:
+            // TODO: fire event to quit application
+            /* platformState->quitRequest = 1; */
+            return 0;
+        case WM_DESTROY:
+            /* platformState->quitRequest = 1; */
+            PostQuitMessage(0);
+            return 0;
+
+        case WM_SIZE:
+        {
+            /* u32 width  = (u32)LOWORD(lParam); */
+            /* u32 height = (u32)HIWORD(lParam); */
+
+            // TODO: fire event to resize screen
+
+            /* platformState->windowResized = 1; */
+            /* platformState->width = width; */
+            /* platformState->height = height; */
+        } break;
+
         case WM_SYSKEYUP:
         case WM_SYSKEYDOWN:
         case WM_KEYUP:
         case WM_KEYDOWN:
         {
-            /* Assert(!"no keyboard message here") */
-        } break;
-#endif // !0
-
-        case WM_QUIT:
-        {
-            platformState->quitRequest = 1;
-            break;
-        }
-        case WM_DESTROY:
-        {
-            platformState->quitRequest = 1; // TODO: if window being destroyed we prolly want to do smtg else
-            break;
-        }
-        
-        case WM_CLOSE:
-        {
-            platformState->quitRequest = 1;
-            break;
-        } 
-
-        case WM_SIZE:
-        {
-            u32 width  = (u32)LOWORD(lParam);
-            u32 height = (u32)HIWORD(lParam);
-            platformState->windowResized = 1;
-            platformState->width = width;
-            platformState->height = height;
+            // TODO: input processing
         } break;
 
-        default:
+        case WM_MOUSEMOVE:
         {
-            result = DefWindowProc(hwnd, uMsg, wParam, lParam);
+            /* i32 xMousePos = GET_X_LPARAM(lParam); */
+            /* i32 yMousePos = GET_Y_LPARAM(lParam); */
+            // TODO: input processing
+        } break;
+        case WM_LBUTTONUP:
+        case WM_LBUTTONDOWN:
+        case WM_RBUTTONUP:
+        case WM_RBUTTONDOWN:
+        case WM_MBUTTONUP:
+        case WM_MBUTTONDOWN:
+        {
+            // b8 pressed = msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN;
+            // TODO: input processing
         } break;
     }
 
-    return result;
-}
-
-b8
-PlatformPumpMessages(platform_state *platformState)
-{
-
-    return 1;
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }

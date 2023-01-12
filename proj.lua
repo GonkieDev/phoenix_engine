@@ -1,3 +1,5 @@
+vim.cmd("set titlestring=PhoenixEngine")
+
 function create_vim_proj_command(keybind, callback_func)
     vim.api.nvim_set_keymap("n", keybind, "", { noremap = true, silent = true, callback=callback_func });
 end

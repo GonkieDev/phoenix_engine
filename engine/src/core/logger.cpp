@@ -1,5 +1,6 @@
 #include "logger.hpp"
 #include "asserts.h"
+#include "../platform/platform.hpp"
 
 // TODO: temporary
 #include <stdio.h>
@@ -32,7 +33,12 @@ LogOutput(log_level level, char *message, ...)
         "[TRACE]: "
     };
 
-    /* b8 isError = level <= LOG_LEVEL_ERROR; */
+#ifndef _DEBUG
+    if (level > LOG_LEVEL_ERROR)
+    {
+        return;
+    }
+#endif
 
     char formattedMessage[16000] = {};
 
@@ -44,8 +50,7 @@ LogOutput(log_level level, char *message, ...)
     char outMessage[ArrayLen(formattedMessage) + __LOG_LEVEL_STRING_LEN] = {};
     snprintf(outMessage, ArrayLen(outMessage), "%s%s\n", logLevelStrings[level], formattedMessage);
 
-    // TODO: remove this, put it in platform layer
-    printf("%s", outMessage);
+    PlatformDebugOutput(outMessage);
 }
 
 internal b8
