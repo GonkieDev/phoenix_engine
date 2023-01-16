@@ -1,5 +1,15 @@
 #pragma once
 
+/*
+
+TODO:
+*memory arenas
+*platform layer memory arena
+*get started with vulkan
+*memory logger
+
+*/
+
 #include "../defines.hpp"
 #include "../core/asserts.h"
 #include "../core/logger.hpp"

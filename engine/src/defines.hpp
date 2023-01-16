@@ -20,6 +20,7 @@ typedef i16 b16;
 typedef i8  b8;
 
 // typedef u32 s32; // Size in bytes
+typedef u64 s64;
 
 static_assert(sizeof(f32) == 4, "f32 must me 4 bytes!");
 static_assert(sizeof(f64) == 8, "f64 must me 8 bytes!");
