@@ -1,9 +1,4 @@
-#include "../defines.hpp"
-#include "../core/asserts.h"
-#include "../core/logger.hpp"
-#include "../core/memory_arenas.hpp"
 #include "../core/engine.hpp"
-#include "platform.hpp"
 
 // Includes for unity build
 #include "../core/engine.cpp"
@@ -13,7 +8,7 @@
 #include <windows.h>
 #include <xinput.h>
 
-struct internal_state
+struct platform_state
 {
     HWND hwnd;
     HINSTANCE hinstance;
@@ -30,16 +25,16 @@ struct internal_state
 // Functions that are used in this file only
 LRESULT CALLBACK win32WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 #if 0
-internal b32     win32SetupEngineMemory(game_memory *memory);
+PXAPI b32     win32SetupEngineMemory(game_memory *memory);
 
 // Input
-internal void        win32ProcessGamepadInput(game_input *gameInput);
-internal inline void win32ProcessKeyboardMessage(button_state *key, b32 isDown);
-internal void        win32ProcessMessageQueue(b32 *engineRunning, game_input *input);
+PXAPI void        win32ProcessGamepadInput(game_input *gameInput);
+PXAPI inline void win32ProcessKeyboardMessage(button_state *key, b32 isDown);
+PXAPI void        win32ProcessMessageQueue(b32 *engineRunning, game_input *input);
 #endif
 
 // XInput
-internal inline void win32LoadXInput();
+PXAPI inline void win32LoadXInput();
 
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD /*dwUserIndex*/, XINPUT_STATE * /*pState*/)
 typedef X_INPUT_GET_STATE(x_input_get_state);
@@ -59,49 +54,57 @@ X_INPUT_SET_STATE(XInputSetStateStub)
 global_var x_input_set_state *XInputSetState_ = XInputSetStateStub;
 #define XInputSetState XInputSetState_
 
+#define WIN32_FAIL_EXIT 1
+#define WIN32_SUCCESS_EXIT 0
 int WINAPI
 wWinMain(_In_     HINSTANCE hInstance,
          _In_opt_ HINSTANCE /* hPrevInstance */,
          _In_     LPWSTR    /* lpCmdLine */,
          _In_     int       nCmdShow)
 {
-    internal_state internalState = {};
-    internalState.hinstance = hInstance;
-    internalState.nCmdShow = nCmdShow;
+    platform_state platformState = {};
+    platformState.hinstance = hInstance;
+    platformState.nCmdShow = nCmdShow;
+
+#if _DEBUG
+    AllocConsole();
+    freopen("CONOUT$", "wb", stdout);
+    freopen("CONOUT$", "wb", stderr);
+#endif // !_DEBUG
 
     // Timer setup
     {
         LARGE_INTEGER frequency;
         QueryPerformanceFrequency(&frequency);
-        internalState.clockFrequency = 1.0 / (f64)frequency.QuadPart; 
-        QueryPerformanceCounter(&internalState.startTime);
+        platformState.clockFrequency = 1.0 / (f64)frequency.QuadPart; 
+        QueryPerformanceCounter(&platformState.startTime);
     }
 
-    platform_state platformState = {};
-    platformState.internalState = &internalState;
+    engine_state engineState = {};
+    engineState.platformState = &platformState;
 
-    GameMain(&platformState);
+    if (!PhoenixInit(&engineState))
+        return WIN32_FAIL_EXIT;
 
-    // Cleanup
-    ShutdownLogging();
+    if (!PhoenixRun(&engineState))
+        return WIN32_FAIL_EXIT;
 
-    return 0;
+    return WIN32_SUCCESS_EXIT;
 }
 
-internal b8
-PlatformInit(u32 width, u32 height, wchar_t *applicationName, platform_state_ptr platformState)
+PXAPI b8
+PlatformInit(wchar_t *applicationName, engine_state *engineState)
 {
-    InitLogging();
     win32LoadXInput();
 
-    internal_state *internalState = (internal_state*)platformState->internalState;
+    platform_state *platformState = engineState->platformState;
 
     // Initialize the window class.
     WNDCLASSEX windowClass    = {};
     windowClass.cbSize        = sizeof(WNDCLASSEX);
     windowClass.style         = CS_HREDRAW | CS_VREDRAW;
     windowClass.lpfnWndProc   = win32WindowProc;
-    windowClass.hInstance     = internalState->hinstance;
+    windowClass.hInstance     = platformState->hinstance;
     /* windowClass.hIcon         = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPLICATION)); */
     windowClass.hCursor       = LoadCursor(0, IDC_ARROW);
     windowClass.lpszClassName = L"PhoenixEngineWindowClass";
@@ -113,8 +116,8 @@ PlatformInit(u32 width, u32 height, wchar_t *applicationName, platform_state_ptr
         return 0;
     }
 
-    u32 windowWidth  = width;
-    u32 windowHeight = height;
+    u32 windowWidth  = engineState->width;
+    u32 windowHeight = engineState->height;
 
     u32 windowStyle   = WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX |
                         WS_THICKFRAME;
@@ -128,13 +131,13 @@ PlatformInit(u32 width, u32 height, wchar_t *applicationName, platform_state_ptr
     windowWidth  += borderRect.right  - borderRect.left;
     windowHeight += borderRect.bottom - borderRect.top;
 
-    internalState->hwnd = CreateWindowEx(
+    platformState->hwnd = CreateWindowEx(
         windowExStyle, windowClass.lpszClassName, applicationName, windowStyle,
         CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight,
-        0, 0, internalState->hinstance, 0
+        0, 0, platformState->hinstance, 0
     );
 
-    if (!internalState->hwnd)
+    if (!platformState->hwnd)
     {
         MessageBoxA(0, "Window creation failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
 
@@ -142,14 +145,14 @@ PlatformInit(u32 width, u32 height, wchar_t *applicationName, platform_state_ptr
         return 0;
     }
 
-    SetWindowLongPtr(internalState->hwnd, 0, (LONG_PTR)(&platformState));
+    SetWindowLongPtr(platformState->hwnd, 0, (LONG_PTR)(engineState));
 
-    ShowWindow(internalState->hwnd, internalState->nCmdShow);
+    ShowWindow(platformState->hwnd, platformState->nCmdShow);
 
     return 1;
 }
 
-internal inline void
+PXAPI inline void
 win32LoadXInput()
 {
     HMODULE XInputLib = LoadLibrary(L"xinput1_4.dll");
@@ -164,7 +167,7 @@ win32LoadXInput()
     }
 }
 
-void *
+PXAPI void *
 PlatformAllocateMemory(u64 size, b8 aligned)
 {
 #ifdef INTERNAL_BUILD
@@ -177,7 +180,8 @@ PlatformAllocateMemory(u64 size, b8 aligned)
     return result;
 }
 
-void PlatformFreeMemory(void *memory, b8 aligned)
+PXAPI void
+PlatformFreeMemory(void *memory, b8 aligned)
 {
     if (memory)
     {
@@ -185,10 +189,36 @@ void PlatformFreeMemory(void *memory, b8 aligned)
     }
 }
 
-internal void
-PlatformDebugOutput(char *message)
+PXAPI f64
+PlatformGetAbsoluteTime(platform_state *platformState)
 {
+    LARGE_INTEGER nowTime;
+    QueryPerformanceCounter(&nowTime);
+    return (f64)(nowTime.QuadPart - platformState->clockFrequency);
+}
+
+PXAPI void
+PlatformDebugOutput(char *message, log_level level)
+{
+#if _DEBUG
     OutputDebugStringA((LPCSTR)message);
+
+    b8 isError = level <= LOG_LEVEL_ERROR;
+
+    DWORD colors[LOG_LEVEL_COUNT];
+    colors[LOG_LEVEL_FATAL] = FOREGROUND_INTENSITY | BACKGROUND_RED | FOREGROUND_RED |
+        FOREGROUND_GREEN | FOREGROUND_BLUE;
+    colors[LOG_LEVEL_ERROR] = FOREGROUND_INTENSITY | FOREGROUND_RED;
+    colors[LOG_LEVEL_WARN]  = FOREGROUND_RED | FOREGROUND_GREEN;
+    colors[LOG_LEVEL_INFO]  = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
+    colors[LOG_LEVEL_DEBUG] = FOREGROUND_INTENSITY | FOREGROUND_GREEN;
+    colors[LOG_LEVEL_TRACE] = FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+
+    LPDWORD numberWritten = 0;
+    HANDLE hConsole = GetStdHandle(isError ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
+    SetConsoleTextAttribute(hConsole, colors[level]);
+    WriteConsoleA(hConsole, (LPCSTR)message, PXDEBUGStrLen(message), numberWritten, 0);
+#endif // !_DEBUG
 }
 
 LRESULT CALLBACK 
@@ -249,4 +279,43 @@ win32WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+PXAPI b8
+PlatformPumpMessages()
+{
+    MSG msg;
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) > 0)
+    {
+        TranslateMessage(&msg);
+        DispatchMessageA(&msg);
+    }
+    return 1;
+#if 0
+    MSG msg;
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) > 0)
+    {
+        switch (msg.message)
+        {
+            case WM_QUIT:
+            {
+                return 0;
+            }
+            
+            case WM_KEYDOWN:
+            case WM_KEYUP:
+            case WM_SYSKEYDOWN: //alt + keydown 
+            case WM_SYSKEYUP: //alt + keyup
+            {
+                if (msg.wParam == VK_ESCAPE)
+                {
+                    PostQuitMessage(0);
+                    return 0;
+                }
+            } break;
+        }
+    }
+#endif
+
+    return 0;
 }

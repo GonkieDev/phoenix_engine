@@ -7,21 +7,22 @@
 #include <stdarg.h>
 #include <string.h>
 
-#if _DEBUG
 void
 ReportAssertionFailure(char *expression, char *message, char *file, i32 line)
 {
+#if _DEBUG
     LogOutput(
         LOG_LEVEL_FATAL,
         "Assertion Failure: %s, message: %s, in file '%s'[%d]",
         expression, message, file, line
     );
-}
 #endif
+}
 
 void
 LogOutput(log_level level, char *message, ...)
 {
+#if _DEBUG
 #define __LOG_LEVEL_STRING_LEN 10
 
     char logLevelStrings[LOG_LEVEL_COUNT][__LOG_LEVEL_STRING_LEN] = {
@@ -33,13 +34,6 @@ LogOutput(log_level level, char *message, ...)
         "[TRACE]: "
     };
 
-#ifndef _DEBUG
-    if (level > LOG_LEVEL_ERROR)
-    {
-        return;
-    }
-#endif
-
     char formattedMessage[16000] = {};
 
     __builtin_va_list argPtr;
@@ -50,7 +44,8 @@ LogOutput(log_level level, char *message, ...)
     char outMessage[ArrayLen(formattedMessage) + __LOG_LEVEL_STRING_LEN] = {};
     snprintf(outMessage, ArrayLen(outMessage), "%s%s\n", logLevelStrings[level], formattedMessage);
 
-    PlatformDebugOutput(outMessage);
+    PlatformDebugOutput(outMessage, level);
+#endif // !_DEBUG
 }
 
 internal b8

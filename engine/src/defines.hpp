@@ -73,5 +73,18 @@ static_assert(sizeof(f64) == 8, "f64 must me 8 bytes!");
 // NOTE: this is so that linker can find wWinMain func
 #pragma comment(linker, "/include:wWinMain")
 
+#define PXAPI internal
+
+inline u32 PXDEBUGStrLen(char *buf)
+{
+    u32 result = 0;
+    for (;;)
+    {
+        if (!buf[result])
+            break;
+        result++;
+    }
+    return result;
+}
 
 #endif // !PXPLATFORM_WINDOWS
