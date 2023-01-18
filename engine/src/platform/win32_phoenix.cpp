@@ -88,6 +88,8 @@ wWinMain(_In_     HINSTANCE hInstance,
     if (!PhoenixRun(&engineState))
         return WIN32_FAIL_EXIT;
 
+    PhoenixShutdown(&engineState);
+
     return WIN32_SUCCESS_EXIT;
 }
 
@@ -191,9 +193,28 @@ PlatformFreeMemory(void *memory, b8 aligned)
 PXAPI f64
 PlatformGetAbsoluteTime(platform_state *platformState)
 {
-    LARGE_INTEGER nowTime;
-    QueryPerformanceCounter(&nowTime);
-    return (f64)(nowTime.QuadPart - platformState->clockFrequency);
+    LARGE_INTEGER t;
+    QueryPerformanceCounter(&t);
+    return (f64)(t.QuadPart * platformState->clockFrequency);
+}
+
+PXAPI void
+PlatformSleep(f32 secondsToSleep)
+{
+    HANDLE timer = CreateWaitableTimer(0, 1, 0);
+    if(!timer) return;
+
+    LARGE_INTEGER li;
+    li.QuadPart = -NANOSECONDS((f32)secondsToSleep)/100; // timer given in 100ns seconds
+    if(!SetWaitableTimer(timer, &li, 0, 0, 0, FALSE))
+    {
+        CloseHandle(timer);
+        return;
+    }
+    // Start and wait for timer
+    WaitForSingleObject(timer, INFINITE);
+
+    CloseHandle(timer);
 }
 
 PXAPI void

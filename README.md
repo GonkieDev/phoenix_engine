@@ -4,7 +4,9 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 ## TODOs:
 - memory arenas
 - memory logging
-- 
+
+### Platform TODOs:
+- minimise windows results in `engineState.suspended = 1`
 
 ### Input TODOs:
 - provide controller deadzone as parameters 

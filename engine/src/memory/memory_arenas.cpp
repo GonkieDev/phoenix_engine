@@ -1,7 +1,7 @@
 #include "../core/engine.hpp"
 
 void *
-MemoryArenaAlloc(mem_arena *arena, s64 size)
+PXMemoryArenaAlloc(mem_arena *arena, s64 size)
 {
     u8 *result = arena->head;
 

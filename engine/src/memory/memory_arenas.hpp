@@ -9,6 +9,6 @@ struct mem_arena
     s64  size; // in bytes
 };
 
-#define MemoryArenaAllocStruct(arena, s) MemoryArenaAlloc(arena, sizeof(s))
+#define PXMemoryArenaAllocStruct(arena, s) MemoryArenaAlloc(arena, sizeof(s))
 
-void * MemoryArenaAlloc(mem_arena *arena, s64 size);
+void *PXMemoryArenaAlloc(mem_arena *arena, s64 size);

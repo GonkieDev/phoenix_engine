@@ -29,13 +29,17 @@ static_assert(sizeof(f64) == 8, "f64 must me 8 bytes!");
 #define local_persist static
 #define internal static
 
-#define KIBIBYTES(x) (x * 1024)
+#define KIBIBYTES(x) ((x) * 1024)
 #define MEBIBYTES(x) (KIBIBYTES(x) * 1024)
 #define GIBIBYTES(x) (MEBIBYTES(x) * 1024)
 
-#define KILOBYTES(x) (x * 1000)
+#define KILOBYTES(x) ((x) * 1000)
 #define MEGABYTES(x) (KILOBYTES(x) * 1000)
 #define GIGABYTES(x) (MEGABYTES(x) * 1000)
+
+#define MILLISECONDS(t) ((t) * 1000)
+#define MICROSECONDS(t) (MILLISECONDS(t) * 1000)
+#define NANOSECONDS(t) (MILLISECONDS(t) * 1000)
 
 #define ArrayLen(arr) (sizeof((arr))/sizeof((arr)[0]))
 

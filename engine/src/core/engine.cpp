@@ -1,7 +1,9 @@
 #include "engine.hpp"
 
 #include "logger.cpp"
+#include "clock.cpp"
 #include "../memory/memory_arenas.cpp"
+
 
 PXAPI b8 
 PhoenixInit(engine_state *engineState)
@@ -13,8 +15,11 @@ PhoenixInit(engine_state *engineState)
     if (!gameInitResult)
         return 0;
 
-    engineState->width  = gameConfig.width;
-    engineState->height = gameConfig.height;
+    // Only set configs if provided, else keep default values
+    if (gameConfig.width) engineState->width = gameConfig.width;
+    if (gameConfig.height) engineState->height = gameConfig.height;
+    if (gameConfig.targetRefreshRate) engineState->targetRefreshRate = gameConfig.targetRefreshRate;
+
     engineState->gameState = gameConfig.gameState;
 
     if (!PlatformInit(gameConfig.gameName, engineState))
@@ -32,23 +37,52 @@ PhoenixInit(engine_state *engineState)
 PXAPI b8
 PhoenixRun(engine_state *engineState)
 {
-    PXFATAL("omg %d", 2);
-    PXERROR("omg %d", 5);
-    PXWARN("omg %d", 23);
-    PXINFO("omg %d", 64);
-    PXDEBUG("test test test");
-    PXTRACE("test test test");
+    ClockStart(&engineState->clock, engineState->platformState);
+    ClockUpdate(&engineState->clock, engineState->platformState);
+    engineState->lastTime = engineState->clock.elapsed;
+    f64 runningTime = 0;
+    f64 targetFrameSeconds = 0;
+    if (engineState->targetRefreshRate)
+        targetFrameSeconds = 1.0 / (f64)engineState->targetRefreshRate;
+    u8 frameCount = 0;
 
     while (engineState->isRunning)
     {
         PlatformPumpMessages();
-        GameUpdate(0.f, engineState->gameState);
-        GameRender(0.f, engineState->gameState);
 
-        engineState->input = {};
+        if (!engineState->isSuspended)
+        {
+            ClockUpdate(&engineState->clock, engineState->platformState);
+            f64 deltaTime = (engineState->clock.elapsed - engineState->lastTime);
+            f64 frameStartTime = PlatformGetAbsoluteTime(engineState->platformState);
+
+            GameUpdate((f32)deltaTime, engineState->input, engineState->gameState);
+            GameRender((f32)deltaTime, engineState->gameState);
+            engineState->input = {};
+
+            // Get time taken to run this function
+            f64 frameEndTime = PlatformGetAbsoluteTime(engineState->platformState);
+            f64 frameElapsedTime = frameEndTime - frameStartTime;
+            runningTime += frameElapsedTime;
+            f64 remainingFrameTime = targetFrameSeconds - frameElapsedTime;
+            if (remainingFrameTime > 0)
+            {
+                PlatformSleep(remainingFrameTime);
+                frameCount++;
+            }
+
+            engineState->lastTime = engineState->clock.elapsed;
+        }
+
     }
 
-    GameEnd();
+    engineState->isRunning = 0;
 
     return 1;
+}
+
+PXAPI void
+PhoenixShutdown(engine_state *engineState)
+{
+    GameEnd(engineState->gameState);
 }

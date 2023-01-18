@@ -11,8 +11,7 @@ b8 GameInit(game_config *gameConfig)
     wchar_t *gameName = L"Test Bed";
 
     gameConfig->gameName = gameName;
-    gameConfig->width  = 1000;
-    gameConfig->height = 720;
+    gameConfig->targetRefreshRate = 144;
 
     /*
      Do stuff like:
@@ -26,7 +25,7 @@ b8 GameInit(game_config *gameConfig)
     return 1;
 }
 
-void GameUpdate(f32 deltaTime, game_state *gameState)
+void GameUpdate(f32 deltaTime, engine_input input, game_state *gameState)
 {
 }
 
@@ -38,7 +37,6 @@ void GameOnResize(u32 height, u32 width, game_state *gameState)
 {
 }
 
-b8 GameEnd()
+void GameEnd(game_state *gameState)
 {
-    return 1;
 }

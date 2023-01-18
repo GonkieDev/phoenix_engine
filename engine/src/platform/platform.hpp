@@ -10,4 +10,6 @@ PXAPI f64 PlatformGetAbsoluteTime(platform_state *platform_state);
 PXAPI void *PlatformAllocateMemory(u64 size, b8 aligned);
 PXAPI void PlatformFreeMemory(void *memory, b8 aligned);
 
+PXAPI void PlatformSleep(f64 secondsToSleep);
+
 PXAPI void PlatformDebugOutput(char *message, log_level level);
