@@ -199,7 +199,7 @@ PlatformGetAbsoluteTime(platform_state *platformState)
 }
 
 PXAPI void
-PlatformSleep(f32 secondsToSleep)
+PlatformSleep(f64 secondsToSleep)
 {
     HANDLE timer = CreateWaitableTimer(0, 1, 0);
     if(!timer) return;

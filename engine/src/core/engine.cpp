@@ -70,7 +70,6 @@ PhoenixRun(engine_state *engineState)
                 PlatformSleep(remainingFrameTime);
                 frameCount++;
             }
-
             engineState->lastTime = engineState->clock.elapsed;
         }
 
