@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include <windows.h>
+#include <windowsx.h> // for GET_X_LPARAM, GET_Y_LPARAM
 #include <xinput.h>
 
 struct platform_state
@@ -68,8 +69,6 @@ wWinMain(_In_     HINSTANCE hInstance,
 
 #if _DEBUG
     AllocConsole();
-    freopen("CONOUT$", "wb", stdout);
-    freopen("CONOUT$", "wb", stderr);
 #endif // !_DEBUG
 
     // Timer setup
@@ -221,24 +220,141 @@ PlatformDebugOutput(char *message, log_level level)
 #endif // !_DEBUG
 }
 
-LRESULT CALLBACK 
+PXAPI inline void
+win32ProcessKeyboardMessage(button_state *key, b32 isDown)
+{
+    /* PX_ASSERT_MSG(key->endedDown != isDown, "[INPUT] Button state didn't change but it's being processed as if it did"); */
+    key->endedDown = isDown;
+    ++key->halfTransitions;
+}
+
+PXAPI inline void
+win32ProcessKeyInput(WPARAM wParam, LPARAM lParam, engine_state *engineState)
+{
+    u32 VKCode = (u32)(wParam);
+
+    if (VKCode == VK_ESCAPE)
+    {
+        PostQuitMessage(0);
+        engineState->isRunning = 0;
+        return;
+    }
+
+    engine_input *input = &engineState->input;
+
+    // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
+    b32 wasDown = ((lParam & (1 << 30)) != 0);
+    b32 isDown  = ((lParam & (1 << 31)) == 0);
+    if (wasDown != isDown)
+    {
+        switch (VKCode)
+        {
+            case 'Q':
+            win32ProcessKeyboardMessage(&input->Q, isDown); break;
+            case 'W':
+            win32ProcessKeyboardMessage(&input->W, isDown); break;
+            case 'E':
+            win32ProcessKeyboardMessage(&input->E, isDown); break;
+            case 'R':
+            win32ProcessKeyboardMessage(&input->R, isDown); break;
+            case 'T':
+            win32ProcessKeyboardMessage(&input->T, isDown); break;
+            case 'Y':
+            win32ProcessKeyboardMessage(&input->Y, isDown); break;
+            case 'U':
+            win32ProcessKeyboardMessage(&input->U, isDown); break;
+            case 'I':
+            win32ProcessKeyboardMessage(&input->I, isDown); break;
+            case 'O':
+            win32ProcessKeyboardMessage(&input->O, isDown); break;
+            case 'P':
+            win32ProcessKeyboardMessage(&input->P, isDown); break;
+            case 'A':
+            win32ProcessKeyboardMessage(&input->A, isDown); break;
+            case 'S':
+            win32ProcessKeyboardMessage(&input->S, isDown); break;
+            case 'D':
+            win32ProcessKeyboardMessage(&input->D, isDown); break;
+            case 'F':
+            win32ProcessKeyboardMessage(&input->F, isDown); break;
+            case 'G':
+            win32ProcessKeyboardMessage(&input->G, isDown); break;
+            case 'H':
+            win32ProcessKeyboardMessage(&input->H, isDown); break;
+            case 'J':
+            win32ProcessKeyboardMessage(&input->J, isDown); break;
+            case 'K':
+            win32ProcessKeyboardMessage(&input->K, isDown); break;
+            case 'L':
+            win32ProcessKeyboardMessage(&input->L, isDown); break;
+            case 'Z':
+            win32ProcessKeyboardMessage(&input->Z, isDown); break;
+            case 'X':
+            win32ProcessKeyboardMessage(&input->X, isDown); break;
+            case 'C':
+            win32ProcessKeyboardMessage(&input->C, isDown); break;
+            case 'V':
+            win32ProcessKeyboardMessage(&input->V, isDown); break;
+            case 'N':
+            win32ProcessKeyboardMessage(&input->N, isDown); break;
+            case VK_SPACE:
+            win32ProcessKeyboardMessage(&input->spacebar, isDown); break;
+            case VK_OEM_4:
+            win32ProcessKeyboardMessage(&input->leftBracket, isDown); break;
+            case VK_OEM_6:
+            win32ProcessKeyboardMessage(&input->rightBracket, isDown); break;
+
+            // Mouse keys
+            case VK_LBUTTON:
+            win32ProcessKeyboardMessage(&input->mouseButtons[MOUSE_LEFT_BUTTON], isDown); break;
+            case VK_RBUTTON:
+            win32ProcessKeyboardMessage(&input->mouseButtons[MOUSE_RIGHT_BUTTON], isDown); break;
+            case VK_MBUTTON:
+            win32ProcessKeyboardMessage(&input->mouseButtons[MOUSE_MIDDLE_BUTTON], isDown); break;
+            case VK_XBUTTON1:
+            win32ProcessKeyboardMessage(&input->mouseButtons[MOUSE_SIDE_FORWARD_BUTTON], isDown); break;
+            case VK_XBUTTON2:
+            win32ProcessKeyboardMessage(&input->mouseButtons[MOUSE_SIDE_BACKWARD_BUTTON], isDown); break;
+            
+            default:
+            PXWARN("[INPUT] %c(%d) key without mapped input being pressed", VKCode, VKCode);
+        }
+    }
+}
+
+PXAPI inline void
+win32ProcessMouseMovementInput(i32 x, i32 y, engine_input *input)
+{
+    input->mouseX = x;
+    input->mouseY = y;
+}
+
+PXAPI inline void
+win32ProcessMouseWheelInput(i32 zDelta, engine_input *input)
+{
+    input->mouseDZ = zDelta;
+}
+
+PXAPI LRESULT CALLBACK 
 win32WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    /* platform_state *platformState = (platform_state*)GetWindowLongPtr(hwnd, 0); */
+    engine_state *engineState = (engine_state *)GetWindowLongPtr(hwnd, 0);
+
     switch (uMsg)
     {
-        case WM_ERASEBKGND:
-            // NOTE: erasing will be handled by application to prevent flicker
-            return 1;
+        // NOTE: erasing will be handled by application to prevent flicker
+        /* case WM_ERASEBKGND: return 1; */
 
         case WM_CLOSE:
+        {
             // TODO: fire event to quit application
-            /* platformState->quitRequest = 1; */
-            return 0;
+            engineState->isRunning = 0;
+        } break;
         case WM_DESTROY:
-            /* platformState->quitRequest = 1; */
+        {
+            engineState->isRunning = 0;
             PostQuitMessage(0);
-            return 0;
+        } break;
 
         case WM_SIZE:
         {
@@ -257,25 +373,24 @@ win32WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         case WM_KEYUP:
         case WM_KEYDOWN:
         {
-            // TODO: input processing
-        } break;
+            win32ProcessKeyInput(wParam, lParam, engineState);
+        } return 0;
 
         case WM_MOUSEMOVE:
         {
-            /* i32 xMousePos = GET_X_LPARAM(lParam); */
-            /* i32 yMousePos = GET_Y_LPARAM(lParam); */
-            // TODO: input processing
-        } break;
-        case WM_LBUTTONUP:
-        case WM_LBUTTONDOWN:
-        case WM_RBUTTONUP:
-        case WM_RBUTTONDOWN:
-        case WM_MBUTTONUP:
-        case WM_MBUTTONDOWN:
+            i32 xMousePos = GET_X_LPARAM(lParam);
+            i32 yMousePos = GET_Y_LPARAM(lParam);
+            win32ProcessMouseMovementInput(xMousePos, yMousePos, &engineState->input);
+        } return 0;
+        case WM_MOUSEWHEEL:
         {
-            // b8 pressed = msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN;
-            // TODO: input processing
-        } break;
+            i32 zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+            if (!zDelta) break;
+
+            zDelta = (zDelta < 0) ? -1 : 1;
+            win32ProcessMouseWheelInput(zDelta, &engineState->input);
+
+        } return 0;
     }
 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -291,31 +406,4 @@ PlatformPumpMessages()
         DispatchMessageA(&msg);
     }
     return 1;
-#if 0
-    MSG msg;
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) > 0)
-    {
-        switch (msg.message)
-        {
-            case WM_QUIT:
-            {
-                return 0;
-            }
-            
-            case WM_KEYDOWN:
-            case WM_KEYUP:
-            case WM_SYSKEYDOWN: //alt + keydown 
-            case WM_SYSKEYUP: //alt + keyup
-            {
-                if (msg.wParam == VK_ESCAPE)
-                {
-                    PostQuitMessage(0);
-                    return 0;
-                }
-            } break;
-        }
-    }
-#endif
-
-    return 0;
 }

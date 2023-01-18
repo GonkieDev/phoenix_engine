@@ -23,6 +23,9 @@ PhoenixInit(engine_state *engineState)
         return 0;
     }
 
+    engineState->input = {};
+
+    engineState->isRunning = 1;
     return 1;
 }
 
@@ -36,10 +39,13 @@ PhoenixRun(engine_state *engineState)
     PXDEBUG("test test test");
     PXTRACE("test test test");
 
-    while (PlatformPumpMessages())
+    while (engineState->isRunning)
     {
+        PlatformPumpMessages();
         GameUpdate(0.f, engineState->gameState);
         GameRender(0.f, engineState->gameState);
+
+        engineState->input = {};
     }
 
     GameEnd();

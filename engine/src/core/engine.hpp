@@ -1,20 +1,13 @@
 #pragma once
 
-/*
-
-TODO:
-*move includes to includes folder
-*memory arenas
-*platform layer memory arena
-*get started with vulkan
-*memory logger
-
-*/
-
 #include "../defines.hpp"
+// Core
+#include "asserts.h"
+#include "logger.hpp"
+#include "input.hpp"
 
 struct platform_state;
-struct game_state; // declared by user
+struct game_state; // NOTE: declared by user
 
 struct engine_state
 {
@@ -24,13 +17,11 @@ struct engine_state
     u16 width;
     u16 height;
     f64 lastTime;
+    engine_input input;
 
     game_state *gameState;
 };
 
-// Core
-#include "asserts.h"
-#include "logger.hpp"
 // Memory
 #include "../memory/memory_arenas.hpp"
 // Platform

@@ -11,7 +11,7 @@ b8 GameInit(game_config *gameConfig)
     wchar_t *gameName = L"Test Bed";
 
     gameConfig->gameName = gameName;
-    gameConfig->width  = 720;
+    gameConfig->width  = 1000;
     gameConfig->height = 720;
 
     /*
