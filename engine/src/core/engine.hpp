@@ -1,15 +1,15 @@
 #pragma once
 
-
 struct platform_state;
 struct game_state; // NOTE: declared by user
 
-#include "../defines.hpp"
+#include <defines.hpp>
 // Core
-#include "asserts.h"
-#include "logger.hpp"
-#include "input.hpp"
-#include "clock.hpp"
+#include <core/asserts.h>
+#include <core/logger.hpp>
+#include <core/input.hpp>
+#include <core/clock.hpp>
+#include <renderer/renderer_frontend.hpp>
 
 struct engine_state
 {
@@ -26,6 +26,8 @@ struct engine_state
 
     platform_state *platformState;
     game_state *gameState;
+
+    renderer_backend rendererBackend;
 };
 
 // Memory

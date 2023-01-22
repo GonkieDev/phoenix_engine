@@ -2,13 +2,18 @@
 
 #include "logger.cpp"
 #include "clock.cpp"
-#include "../memory/memory_arenas.cpp"
+#include <memory/memory_arenas.cpp>
+#include <renderer/renderer_frontend.cpp>
 
 
 PXAPI b8 
 PhoenixInit(engine_state *engineState)
 {
     InitLogging();
+
+    //
+    // Configs
+    //
 
     game_config gameConfig = {};
     b8 gameInitResult = GameInit(&gameConfig);
@@ -22,11 +27,29 @@ PhoenixInit(engine_state *engineState)
 
     engineState->gameState = gameConfig.gameState;
 
+    //
+    // Platform
+    //
+
     if (!PlatformInit(gameConfig.gameName, engineState))
     {
         PXFATAL("Platform failed to create!");
         return 0;
     }
+
+    //
+    // Renderer
+    //
+
+    if (!RendererInit(gameConfig.gameName, engineState))
+    {
+        PXFATAL("Renderer failed to create!");
+        return 0;
+    }
+
+    //
+    // Input
+    //
 
     engineState->input = {};
 
@@ -58,6 +81,13 @@ PhoenixRun(engine_state *engineState)
 
             GameUpdate((f32)deltaTime, engineState->input, engineState->gameState);
             GameRender((f32)deltaTime, engineState->gameState);
+
+            // NOTE: temporary
+            render_packet packet;
+            packet.deltaTime = deltaTime;
+            RendererDrawFrame(&packet);
+
+            // Reset input for next frame
             engineState->input = {};
 
             // Get time taken to run this function
@@ -84,4 +114,6 @@ PXAPI void
 PhoenixShutdown(engine_state *engineState)
 {
     GameEnd(engineState->gameState);
+
+    RendererShutdown(engineState);
 }

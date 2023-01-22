@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../defines.hpp"
+#include <defines.hpp>
 
 struct mem_arena
 {
