@@ -1,9 +1,11 @@
 #include "../core/engine.hpp"
 
+global_var char *VULKAN_PLATFORM_REQUIRED_EXTENSIONS[] = {
+    "VK_KHR_win32_surface",
+};
+
 // Includes for unity build
 #include "../core/engine.cpp"
-
-#include <vulkan/vulkan.h>
 
 #include <windows.h>
 #include <windowsx.h> // for GET_X_LPARAM, GET_Y_LPARAM
@@ -168,6 +170,7 @@ win32LoadXInput()
     }
 }
 
+// TODO: alignment
 PXAPI void *
 PlatformAllocateMemory(u64 size, b8 aligned)
 {

@@ -7,7 +7,9 @@ RendererInit(wchar_t *gameName, struct engine_state *engineState)
 {
     engineState->rendererBackend = {};
 
-    if (!InitRendererBackend(gameName, &engineState->rendererBackend, engineState))
+    // TODO: convert gameName to char *
+    char *appName = "Phoenix Engine App";
+    if (!InitRendererBackend(appName, &engineState->rendererBackend, engineState))
     {
         PXFATAL("Renderer backend failed to create!");
         return 0;
@@ -53,4 +55,10 @@ RendererDrawFrame(render_packet *packet, engine_state *engineState)
     }
 
     return true;
+}
+
+PXAPI void
+RendererOnResized(u16 width, u16 height, struct engine_state *engineState)
+{
+
 }

@@ -11,4 +11,5 @@ struct mem_arena
 
 #define PXMemoryArenaAllocStruct(arena, s) MemoryArenaAlloc(arena, sizeof(s))
 
+// TODO: alignment
 void *PXMemoryArenaAlloc(mem_arena *arena, s64 size);

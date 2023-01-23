@@ -9,20 +9,29 @@ struct game_state; // NOTE: declared by user
 #include <core/logger.hpp>
 #include <core/input.hpp>
 #include <core/clock.hpp>
+#include <core/pxstring.hpp>
 #include <renderer/renderer_frontend.hpp>
+// Memory
+#include <memory/memory.hpp>
+// Platform
+#include <platform/platform.hpp>
 
 struct engine_state
 {
     b8 isRunning;
     b8 isSuspended;
 
-    u16 width = 720;
-    u16 height = 720;
-    u16 targetRefreshRate; // NOTE: 0 means that it's unlimitted
+    // Settings
+    u16 width;
+    u16 height;
+    u16 targetRefreshRate;
 
     clock clock;
     f64 lastTime;
     engine_input input;
+
+    mem_arena frameArena; // NOTE: mem arena that gets reset every frame (also after initialisation,
+                          // thus it can be used for temporary memory needed for initialisation)
 
     platform_state *platformState;
     game_state *gameState;
@@ -30,18 +39,23 @@ struct engine_state
     renderer_backend rendererBackend;
 };
 
-// Memory
-#include "../memory/memory_arenas.hpp"
-// Platform
-#include "../platform/platform.hpp"
+//
+// User API
+//
 
+/*
+ *  General game/app configurations
+ *      - NOTE: only change things you want, the rest will bet set to default
+ */
 struct game_config
 {
-    u16 width;
-    u16 height;
-    u16 targetRefreshRate;
+    u16 width  = 720;
+    u16 height =  720;
+    u16 targetRefreshRate = 60;  // NOTE: 0 means that it's unlimitted
     wchar_t *gameName = L"Phoenix Engine";
-    game_state *gameState;
+    game_state *gameState = 0;
+
+    s64 frameArenaSize = KILOBYTES(100);
 };
 b8 GameInit(game_config *gameConfig);
 

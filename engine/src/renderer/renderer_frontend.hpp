@@ -13,4 +13,4 @@ PXAPI void RendererShutdown(struct engine_state *engineState);
 
 PXAPI void RendererOnResized(u16 width, u16 height, struct engine_state *engineState);
 
-PXAPI b8 RendererDrawFrame(render_packet *packet);
+PXAPI b8 RendererDrawFrame(render_packet *packet, engine_state *engineState);

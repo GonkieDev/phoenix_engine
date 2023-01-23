@@ -2,8 +2,10 @@
 Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulkan. It also provides platform independent input.
 
 ## TODOs:
-- memory arenas
+- vulkan setup
+- vulkan custom allocator
 - memory logging
+- init multiple arenas in same contiguous block
 
 ### Platform TODOs:
 - minimise windows results in `engineState.suspended = 1`

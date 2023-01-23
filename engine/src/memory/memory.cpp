@@ -1,4 +1,4 @@
-#include "../core/engine.hpp"
+#include <core/engine.hpp>
 
 void *
 PXMemoryArenaAlloc(mem_arena *arena, s64 size)
@@ -7,6 +7,7 @@ PXMemoryArenaAlloc(mem_arena *arena, s64 size)
 
 	if (result > arena->head + arena->size)
     {
+        PX_ASSERT_MSG(0, "Ran out of memory in memory arena!");
         return 0;
     }
 

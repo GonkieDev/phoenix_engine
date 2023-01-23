@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../defines.hpp"
+#include <defines.hpp>
 
 #ifdef _DEBUG
 
@@ -11,7 +11,6 @@
 #define debugBreak() __buildin_trap()
 #endif 
 
-// NOTE: implementation in "assets.h"
 void ReportAssertionFailure(char *expression, char *message, char *file, i32 line);
 
 #define PX_ASSERT(expr)                                                     \

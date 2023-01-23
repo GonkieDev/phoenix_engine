@@ -2,7 +2,8 @@
 
 #include "logger.cpp"
 #include "clock.cpp"
-#include <memory/memory_arenas.cpp>
+#include "pxstring.cpp"
+#include <memory/memory.cpp>
 #include <renderer/renderer_frontend.cpp>
 
 
@@ -20,11 +21,9 @@ PhoenixInit(engine_state *engineState)
     if (!gameInitResult)
         return 0;
 
-    // Only set configs if provided, else keep default values
-    if (gameConfig.width) engineState->width = gameConfig.width;
-    if (gameConfig.height) engineState->height = gameConfig.height;
-    if (gameConfig.targetRefreshRate) engineState->targetRefreshRate = gameConfig.targetRefreshRate;
-
+    engineState->width  = gameConfig.width;
+    engineState->height = gameConfig.height;
+    engineState->targetRefreshRate = gameConfig.targetRefreshRate;
     engineState->gameState = gameConfig.gameState;
 
     //
@@ -35,6 +34,23 @@ PhoenixInit(engine_state *engineState)
     {
         PXFATAL("Platform failed to create!");
         return 0;
+    }
+
+    //
+    // Memory
+    //
+    if (gameConfig.frameArenaSize)
+    {
+        engineState->frameArena.buf = PlatformAllocateMemory(gameConfig.frameArenaSize, 0);
+
+        if (!engineState->frameArena.buf)
+        {
+            PXFATAL("Failed to allocate memory required for frame arena!");
+            return 0;
+        }
+
+        engineState->frameArena.head = (u8*)engineState->frameArena.buf;
+        engineState->frameArena.size  = gameConfig.frameArenaSize;
     }
 
     //
@@ -54,6 +70,10 @@ PhoenixInit(engine_state *engineState)
     engineState->input = {};
 
     engineState->isRunning = 1;
+
+    // Reset frame arena
+    engineState->frameArena.head = (u8*)engineState->frameArena.buf;
+
     return 1;
 }
 
@@ -85,7 +105,7 @@ PhoenixRun(engine_state *engineState)
             // NOTE: temporary
             render_packet packet;
             packet.deltaTime = deltaTime;
-            RendererDrawFrame(&packet);
+            RendererDrawFrame(&packet, engineState);
 
             // Reset input for next frame
             engineState->input = {};
@@ -101,6 +121,9 @@ PhoenixRun(engine_state *engineState)
                 frameCount++;
             }
             engineState->lastTime = engineState->clock.elapsed;
+
+            // Reset frame arena
+            engineState->frameArena.head = (u8*)engineState->frameArena.buf;
         }
 
     }
