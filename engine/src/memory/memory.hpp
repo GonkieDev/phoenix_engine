@@ -9,7 +9,7 @@ struct mem_arena
     s64  size; // in bytes
 };
 
-#define PXMemoryArenaAllocStruct(arena, s) MemoryArenaAlloc(arena, sizeof(s))
+#define PXMemoryArenaAllocStruct(arena, s) PXMemoryArenaAlloc(arena, sizeof(s))
 
 // TODO: alignment
 void *PXMemoryArenaAlloc(mem_arena *arena, s64 size);

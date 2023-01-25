@@ -14,3 +14,5 @@ PXAPI void PlatformFreeMemory(void *memory, b8 aligned);
 PXAPI void PlatformSleep(f64 secondsToSleep);
 
 PXAPI void PlatformDebugOutput(char *message, log_level level);
+
+PXAPI b8 PlatformVulkanCreateSurface(struct platform_state *platformState, struct vulkan_context *context);

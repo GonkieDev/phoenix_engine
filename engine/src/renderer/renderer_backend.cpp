@@ -1,10 +1,13 @@
 #include <core/engine.hpp>
 
-#include "vulkan_renderer_types.hpp"
+#include <renderer/vulkan_renderer_types.hpp>
+
+// NOTE: declare backendContext before cpp includes so that they can use it
+global_var vulkan_context backendContext;
 
 #include <renderer/vulkan_renderer_backend_helpers.cpp>
+#include <renderer/vulkan_device.cpp>
 
-global_var vulkan_context backendContext;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
@@ -13,7 +16,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
     void* user_data);
 
 PXAPI b8
-InitRendererBackend(char *appName, renderer_backend *backend, struct engine_state *engineState)
+InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engineState)
 {
     // TODO: custom allocator
     backendContext.allocator = 0;
@@ -101,6 +104,19 @@ InitRendererBackend(char *appName, renderer_backend *backend, struct engine_stat
     PXDEBUG("Vulkan debugger created.");
 
 #endif
+
+    PXDEBUG("Creating a Vulkan suface...");
+    if (!PlatformVulkanCreateSurface(engineState->platformState, &backendContext))
+    {
+        return 0;
+    }
+    PXINFO("Vulkan surface created succesfully.");
+
+    if (!VulkanCreateDevice(&backendContext, &engineState->frameArena))
+    {
+        PXERROR("Failed to create device!");
+        return 0;
+    }
 
     PXINFO("Vulkan renderer initialized sucessfully.");
     return 1;

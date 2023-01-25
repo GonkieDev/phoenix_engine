@@ -1,11 +1,11 @@
-#include "../core/engine.hpp"
+#include <core/engine.hpp>
 
 global_var char *VULKAN_PLATFORM_REQUIRED_EXTENSIONS[] = {
     "VK_KHR_win32_surface",
 };
 
 // Includes for unity build
-#include "../core/engine.cpp"
+#include <core/engine.cpp>
 
 #include <windows.h>
 #include <windowsx.h> // for GET_X_LPARAM, GET_Y_LPARAM
@@ -16,7 +16,7 @@ struct platform_state
     HWND hwnd;
     HINSTANCE hinstance;
     int nCmdShow;
-    VkSurfaceKHR surface;
+    /* VkSurfaceKHR surface; */
     f64 clockFrequency;
     LARGE_INTEGER startTime;
 };
@@ -242,6 +242,25 @@ PlatformDebugOutput(char *message, log_level level)
     SetConsoleTextAttribute(hConsole, colors[level]);
     WriteConsoleA(hConsole, (LPCSTR)message, PXDEBUGStrLen(message), numberWritten, 0);
 #endif // !_DEBUG
+}
+
+PXAPI b8
+PlatformVulkanCreateSurface(struct platform_state *platformState, struct vulkan_context *context)
+{
+    VkWin32SurfaceCreateInfoKHR createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    createInfo.hinstance = platformState->hinstance;
+    createInfo.hwnd = platformState->hwnd;
+
+    VkResult result = vkCreateWin32SurfaceKHR(context->instance, &createInfo, context->allocator,
+            &context->surface);
+    if (result != VK_SUCCESS)
+    {
+        PXFATAL("Vulkan surface failed to create!");
+        return 0;
+    }
+
+    return 1;
 }
 
 PXAPI inline void

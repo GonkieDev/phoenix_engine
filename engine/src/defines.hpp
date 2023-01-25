@@ -91,4 +91,6 @@ inline u32 PXDEBUGStrLen(char *buf)
     return result;
 }
 
+#define for_u32(i, count) for (u32 (i) = 0; (i) < (count); (i)++)
+
 #endif // !PXPLATFORM_WINDOWS
