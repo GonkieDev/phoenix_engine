@@ -23,12 +23,12 @@ struct vulkan_physical_device_queue_family_info
 };
 
 PXAPI b8
-SelectPhysicalDevice(vulkan_context *context, mem_arena *arena);
+SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *tempArena);
 
 PXAPI b8
-VulkanCreateDevice(vulkan_context *context, mem_arena *arena)
+VulkanCreateDevice(vulkan_context *context, mem_arena *permArena, mem_arena *tempArena)
 {
-    if (!SelectPhysicalDevice(context, arena))
+    if (!SelectPhysicalDevice(context, permArena, tempArena))
     {
         return 0;
     }
@@ -39,7 +39,7 @@ VulkanCreateDevice(vulkan_context *context, mem_arena *arena)
 PXAPI void
 VulkanDestroyDevice(vulkan_context *context)
 {
-
+    context->device.physicalDevice = 0;
 }
 
 PXAPI void
@@ -84,6 +84,7 @@ PhysicalDeviceMeetsRequirements(
     VkPhysicalDeviceProperties                  *properties,
     VkPhysicalDeviceFeatures                    *features,
     vulkan_physical_device_requirements         *requirements,
+    mem_arena                                   *permArena, // NOTE: allocations required for program's lifetime
     mem_arena                                   *tempArena, // NOTE: stuff allocated on this can be freed after
     vulkan_physical_device_queue_family_info    *outQueueFamilyInfo,
     vulkan_swapchain_support_info               *outSwapchainSupport)
@@ -164,7 +165,7 @@ PhysicalDeviceMeetsRequirements(
         PXINFO("Device meets queue requirements.");
 
         // TODO: check if we need the outswapchain support later on, if so don't pass it the frame arena
-        VulkanDeviceQuerySwapchainSupport(device, surface, tempArena, outSwapchainSupport);
+        VulkanDeviceQuerySwapchainSupport(device, surface, permArena, outSwapchainSupport);
 
         if (outSwapchainSupport->formatsCount < 1 || outSwapchainSupport->presentModesCount < 1)
         {
@@ -223,7 +224,7 @@ PhysicalDeviceMeetsRequirements(
 }
 
 PXAPI b8
-SelectPhysicalDevice(vulkan_context *context, mem_arena *tempArena)
+SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *tempArena)
 {
     u32 physicalDeviceCount = 0;
     VK_CHECK(vkEnumeratePhysicalDevices(context->instance, &physicalDeviceCount, 0));
@@ -267,11 +268,12 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *tempArena)
         vulkan_physical_device_queue_family_info queueInfo = {};
 
         b8 result = PhysicalDeviceMeetsRequirements(
-            backendContext.device.physicalDevice,
+            physicalDevices[i],
             backendContext.surface,
             &properties,
             &features,
             &requirements,
+            permArena,
             tempArena,
             &queueInfo,
             &backendContext.device.swapchainSupportInfo);
@@ -313,7 +315,7 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *tempArena)
             backendContext.device.physicalDevice = physicalDevices[i];
 
             backendContext.device.graphicsQueueIndex = queueInfo.graphicsFamilyIndex;
-            backendContext.device.presentQueueIndex = queueInfo.presentFamilyIndex;
+            backendContext.device.presentQueueIndex  = queueInfo.presentFamilyIndex;
             backendContext.device.transferQueueIndex = queueInfo.transferFamilyIndex;
             
             backendContext.device.properties = properties;
@@ -330,6 +332,6 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *tempArena)
         return 0;
     }
 
-    PXERROR("Physical device selected!");
+    PXINFO("Physical device selected!");
     return 1;
 }

@@ -30,6 +30,7 @@ struct engine_state
     f64 lastTime;
     engine_input input;
 
+    mem_arena permArena;  // NOTE: mem arena that only gets reset at the end of the program's lifetime
     mem_arena frameArena; // NOTE: mem arena that gets reset every frame (also after initialisation,
                           // thus it can be used for temporary memory needed for initialisation)
 
@@ -55,7 +56,8 @@ struct game_config
     wchar_t *gameName = L"Phoenix Engine";
     game_state *gameState = 0;
 
-    s64 frameArenaSize = KILOBYTES(100);
+    s64 frameArenaSize = KIBIBYTES(100);
+    s64 permArenaSize  = GIBIBYTES(2);
 };
 b8 GameInit(game_config *gameConfig);
 

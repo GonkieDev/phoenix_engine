@@ -31,11 +31,11 @@ static_assert(sizeof(f64) == 8, "f64 must me 8 bytes!");
 
 #define KIBIBYTES(x) ((x) * 1024)
 #define MEBIBYTES(x) (KIBIBYTES(x) * 1024)
-#define GIBIBYTES(x) (MEBIBYTES(x) * 1024)
+#define GIBIBYTES(x) (MEBIBYTES( ((u64)x) ) * 1024)
 
 #define KILOBYTES(x) ((x) * 1000)
 #define MEGABYTES(x) (KILOBYTES(x) * 1000)
-#define GIGABYTES(x) (MEGABYTES(x) * 1000)
+#define GIGABYTES(x) (MEGABYTES( ((u64)x) ) * 1000)
 
 #define MILLISECONDS(t) ((t) * 1000)
 #define MICROSECONDS(t) (MILLISECONDS(t) * 1000)

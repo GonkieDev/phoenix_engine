@@ -6,6 +6,7 @@
 #include <memory/memory.cpp>
 #include <renderer/renderer_frontend.cpp>
 
+PXAPI b8 PhoenixInitMemory(s64 permArenaSize, s64 frameArenaSize, engine_state *engineState);
 
 PXAPI b8 
 PhoenixInit(engine_state *engineState)
@@ -39,18 +40,11 @@ PhoenixInit(engine_state *engineState)
     //
     // Memory
     //
-    if (gameConfig.frameArenaSize)
+
+    if (!PhoenixInitMemory(gameConfig.permArenaSize, gameConfig.frameArenaSize, engineState))
     {
-        engineState->frameArena.buf = PlatformAllocateMemory(gameConfig.frameArenaSize, 0);
-
-        if (!engineState->frameArena.buf)
-        {
-            PXFATAL("Failed to allocate memory required for frame arena!");
-            return 0;
-        }
-
-        engineState->frameArena.head = (u8*)engineState->frameArena.buf;
-        engineState->frameArena.size  = gameConfig.frameArenaSize;
+        PXFATAL("Failed to allocate memory required!");
+        return 0;
     }
 
     //
@@ -139,4 +133,30 @@ PhoenixShutdown(engine_state *engineState)
     GameEnd(engineState->gameState);
 
     RendererShutdown(engineState);
+}
+
+PXAPI b8
+PhoenixInitMemory(s64 permArenaSize, s64 frameArenaSize, engine_state *engineState)
+{
+    PX_ASSERT_MSG(permArenaSize, "A permanent arena size is required!");
+    PX_ASSERT_MSG(frameArenaSize, "A frame arena size is required!");
+
+    s64 totalSize = permArenaSize + frameArenaSize;
+
+    void *base = PlatformAllocateMemory(totalSize, 0);
+
+    if (!base)
+    {
+        return 0;
+    }
+
+    engineState->permArena.buf  = base;
+    engineState->permArena.head = (u8*)base;
+    engineState->permArena.size = permArenaSize;
+    
+    engineState->frameArena.head = engineState->permArena.head + engineState->permArena.size;
+    engineState->frameArena.buf  = (void *)engineState->frameArena.head; 
+    engineState->frameArena.size = frameArenaSize; 
+
+    return 1;
 }

@@ -112,7 +112,7 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
     }
     PXINFO("Vulkan surface created succesfully.");
 
-    if (!VulkanCreateDevice(&backendContext, &engineState->frameArena))
+    if (!VulkanCreateDevice(&backendContext, &engineState->permArena, &engineState->frameArena))
     {
         PXERROR("Failed to create device!");
         return 0;
@@ -126,6 +126,10 @@ PXAPI void
 ShutdownRendererBackend(renderer_backend *backend)
 {
     PXDEBUG("Shutting down renderer backend.");
+
+    vkDestroySurfaceKHR(backendContext.instance, backendContext.surface, backendContext.allocator);
+
+    VulkanDestroyDevice(&backendContext);
 
 #if defined(_DEBUG)
     if (backendContext.debugMessenger)
