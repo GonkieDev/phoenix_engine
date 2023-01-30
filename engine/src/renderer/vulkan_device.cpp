@@ -33,13 +33,86 @@ VulkanCreateDevice(vulkan_context *context, mem_arena *permArena, mem_arena *tem
         return 0;
     }
 
+    PXINFO("Creating vulkan logical device...");
+
+    // NOTE: do not create additional queues for shared indices
+    b8 presentSharesGraphicsQueue  = context->device.presentQueueIndex  == context->device.graphicsQueueIndex;
+    b8 transferSharesGraphicsQueue = context->device.transferQueueIndex == context->device.graphicsQueueIndex;
+
+    u32 qIndexCount = 1 + (!presentSharesGraphicsQueue) + (!transferSharesGraphicsQueue);
+    u32 queueIndices[qIndexCount];
+    
+    {
+        u32 qIndex = 0;
+        queueIndices[qIndex++] = context->device.graphicsQueueIndex;
+        if (!presentSharesGraphicsQueue)  { queueIndices[qIndex++] = context->device.presentQueueIndex;  }
+        if (!transferSharesGraphicsQueue) { queueIndices[qIndex++] = context->device.transferQueueIndex; }
+    }
+
+    VkDeviceQueueCreateInfo queueCreateInfos[qIndexCount];
+    for_u32(i, qIndexCount)
+    {
+        f32 queuePriority = 1.0f;
+        queueCreateInfos[i] = {};
+        queueCreateInfos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfos[i].queueFamilyIndex = queueIndices[i];
+        queueCreateInfos[i].queueCount = 1;
+        // TODO: enabled this for future enhancement
+        /* if (queueIndices[i] == context->device.graphicsQueueIndex) */
+        /* { */
+        /*     queueCreateInfos[i].queueCount = 2; */
+        /* } */
+        queueCreateInfos[i].flags = 0;
+        queueCreateInfos[i].pNext = 0;
+        queueCreateInfos[i].pQueuePriorities = &queuePriority;
+    }
+
+    // TODO: should be configuration driven
+    VkPhysicalDeviceFeatures deviceFeatures = {};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
+
+    VkDeviceCreateInfo deviceCreateInfo = {};
+    deviceCreateInfo.sType                = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    deviceCreateInfo.pNext                = 0;
+    deviceCreateInfo.queueCreateInfoCount = qIndexCount;
+    deviceCreateInfo.pQueueCreateInfos    = queueCreateInfos;
+    deviceCreateInfo.pEnabledFeatures     = &deviceFeatures;
+
+    // Extensions
+    char *extensionNames[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    deviceCreateInfo.enabledExtensionCount   = ArrayLen(extensionNames);
+    deviceCreateInfo.ppEnabledExtensionNames = extensionNames;
+
+    // Deprecated and ignored, so pass nothing
+    deviceCreateInfo.enabledLayerCount   = 0;
+    deviceCreateInfo.ppEnabledLayerNames = 0;
+
+    VK_CHECK(vkCreateDevice(
+        context->device.physicalDevice,
+        &deviceCreateInfo,
+        context->allocator,
+        &context->device.logicalDevice));
+
+    PXINFO("Logical device created!");
+
     return 1;
 }
 
 PXAPI void
 VulkanDestroyDevice(vulkan_context *context)
 {
+    PXINFO("Destroying vulkan logical device...");
+    if (context->device.logicalDevice)
+    {
+        vkDestroyDevice(context->device.logicalDevice, context->allocator);
+        context->device.logicalDevice = 0;
+    }
+
     context->device.physicalDevice = 0;
+
+    context->device.graphicsQueueIndex = -1;
+    context->device.presentQueueIndex  = -1;
+    context->device.transferQueueIndex = -1;
 }
 
 PXAPI void
@@ -157,8 +230,8 @@ PhysicalDeviceMeetsRequirements(
     // Check if device meets requirements
     if (
             (!requirements->graphics || outQueueFamilyInfo->graphicsFamilyIndex != -1) &&
-            (!requirements->present  || outQueueFamilyInfo->presentFamilyIndex  != -1)  &&
-            (!requirements->compute  || outQueueFamilyInfo->computeFamilyIndex  != -1)  &&
+            (!requirements->present  || outQueueFamilyInfo->presentFamilyIndex  != -1) &&
+            (!requirements->compute  || outQueueFamilyInfo->computeFamilyIndex  != -1) &&
             (!requirements->transfer || outQueueFamilyInfo->transferFamilyIndex != -1)
        )
     {
@@ -202,7 +275,7 @@ PhysicalDeviceMeetsRequirements(
                     {
                         PXINFO("Required extension not found: '%s'. Skipping device.", 
                                 requirements->deviceExtensionNames[i]);
-                        return 1;
+                        return 0;
                     }
 
                 } // !for (u32 i = 0; i < requirements->deviceExtensionNamesCount; i++)

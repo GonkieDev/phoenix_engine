@@ -20,8 +20,8 @@ struct vulkan_swapchain_support_info
 
 struct vulkan_device
 {
-    VkDevice device;
-    VkPhysicalDevice physicalDevice;
+    VkDevice logicalDevice = VK_NULL_HANDLE;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     vulkan_swapchain_support_info swapchainSupportInfo;
 
     u32 graphicsQueueIndex;
@@ -36,7 +36,7 @@ struct vulkan_device
 struct vulkan_context
 {
     VkInstance                  instance;
-    VkAllocationCallbacks       *allocator;
+    VkAllocationCallbacks       *allocator = 0;
     vulkan_device               device;
     VkSurfaceKHR                surface;
 

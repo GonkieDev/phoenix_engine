@@ -23,7 +23,8 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
 
     VkApplicationInfo appInfo = {};
     appInfo.sType               = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName    = appName;
+    /* appInfo.pApplicationName    = appName; */
+    appInfo.pApplicationName    = "test";
     appInfo.applicationVersion  = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName         = "Phoenix Engine";
     appInfo.engineVersion       = VK_MAKE_VERSION(1, 0, 0);

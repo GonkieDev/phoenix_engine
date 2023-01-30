@@ -2,6 +2,7 @@
 Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulkan. It also provides platform independent input.
 
 ## TODOs:
+- !!!! FIX PXMemoryArenaAllocate, needs to be aligned properly
 - vulkan setup
 - vulkan custom allocator
 - memory logging

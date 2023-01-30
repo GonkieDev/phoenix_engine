@@ -1,5 +1,8 @@
 #include <core/engine.hpp>
 
+#include <corecrt_malloc.h>
+#include <stdlib.h>
+
 void *
 PXMemoryArenaAlloc(mem_arena *arena, s64 size)
 {
@@ -13,5 +16,7 @@ PXMemoryArenaAlloc(mem_arena *arena, s64 size)
 
     arena->head = result;
 
-    return (void*)result;
+    /* return (void*)result; */
+    // TODO: fix this memory alignment thing 
+    return malloc(size);
 }
