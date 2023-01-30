@@ -2,12 +2,12 @@
 
 #include <renderer/vulkan_renderer_types.hpp>
 
-// NOTE: declare backendContext before cpp includes so that they can use it
-global_var vulkan_context backendContext;
-
 #include <renderer/vulkan_renderer_backend_helpers.cpp>
 #include <renderer/vulkan_device.cpp>
+#include <renderer/vulkan_swapchain.cpp>
 
+// NOTE: declare backendContext before cpp includes so that they can use it
+global_var vulkan_context backendContext;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,

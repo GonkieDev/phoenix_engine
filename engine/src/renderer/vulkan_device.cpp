@@ -95,12 +95,38 @@ VulkanCreateDevice(vulkan_context *context, mem_arena *permArena, mem_arena *tem
 
     PXINFO("Logical device created!");
 
+    // Get queues
+    vkGetDeviceQueue(
+        context->device.logicalDevice,
+        context->device.graphicsQueueIndex,
+        0,
+        &context->device.graphicsQueue);
+
+    vkGetDeviceQueue(
+        context->device.logicalDevice,
+        context->device.presentQueueIndex,
+        0,
+        &context->device.presentQueue);
+
+    vkGetDeviceQueue(
+        context->device.logicalDevice,
+        context->device.transferQueueIndex,
+        0,
+        &context->device.transferQueue);
+
+    PXINFO("Queues obtained.");
+
     return 1;
 }
 
 PXAPI void
 VulkanDestroyDevice(vulkan_context *context)
 {
+    // Unset queues
+    context->device.graphicsQueue = 0;
+    context->device.presentQueue  = 0;
+    context->device.transferQueue = 0;
+
     PXINFO("Destroying vulkan logical device...");
     if (context->device.logicalDevice)
     {
@@ -342,14 +368,14 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
 
         b8 result = PhysicalDeviceMeetsRequirements(
             physicalDevices[i],
-            backendContext.surface,
+            context->surface,
             &properties,
             &features,
             &requirements,
             permArena,
             tempArena,
             &queueInfo,
-            &backendContext.device.swapchainSupportInfo);
+            &context->device.swapchainSupportInfo);
 
         if (result)
         {
@@ -385,21 +411,21 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
                 }
             }
 
-            backendContext.device.physicalDevice = physicalDevices[i];
+            context->device.physicalDevice = physicalDevices[i];
 
-            backendContext.device.graphicsQueueIndex = queueInfo.graphicsFamilyIndex;
-            backendContext.device.presentQueueIndex  = queueInfo.presentFamilyIndex;
-            backendContext.device.transferQueueIndex = queueInfo.transferFamilyIndex;
+            context->device.graphicsQueueIndex = queueInfo.graphicsFamilyIndex;
+            context->device.presentQueueIndex  = queueInfo.presentFamilyIndex;
+            context->device.transferQueueIndex = queueInfo.transferFamilyIndex;
             
-            backendContext.device.properties = properties;
-            backendContext.device.features = features;
-            backendContext.device.memoryProperties = memoryProperties;
+            context->device.properties = properties;
+            context->device.features = features;
+            context->device.memoryProperties = memoryProperties;
 
             break;
         } // !if (result)
     }
 
-    if (!backendContext.device.physicalDevice)
+    if (!context->device.physicalDevice)
     {
         PXERROR("No physical devices were found which met the requirements.");
         return 0;
