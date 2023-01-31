@@ -1,5 +1,7 @@
 #include <core/engine.hpp>
 
+#include <renderer/vulkan_renderer_types.hpp>
+
 PXAPI b8 
 CheckIfRequiredLayersAreAvailable(u32 requiredValidationLayersCount, 
         char **requiredValidationLayers, mem_arena *arena)
@@ -47,4 +49,23 @@ CheckIfRequiredLayersAreAvailable(u32 requiredValidationLayersCount,
     PXINFO("All required validation layers are present.");
 
     return 1;
+}
+
+PXAPI i32
+FindMemoryIndex(vulkan_context *context, u32 typeFilter, u32 propertyFlags)
+{
+    VkPhysicalDeviceMemoryProperties memoryProperties;
+    vkGetPhysicalDeviceMemoryProperties(context->device.physicalDevice, &memoryProperties);
+
+    for_u32(i, memoryProperties.memoryTypeCount)
+    {
+        if (typeFilter & (1 << i) &&
+            (memoryProperties.memoryTypes[i].propertyFlags & propertyFlags) == propertyFlags)
+        {
+            return i;
+        }
+    }
+
+    PXWARN("Unabled to find suitable memory type!");
+    return -1;
 }

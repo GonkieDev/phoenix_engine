@@ -93,4 +93,6 @@ inline u32 PXDEBUGStrLen(char *buf)
 
 #define for_u32(i, count) for (u32 (i) = 0; (i) < (count); (i)++)
 
+#define PXCLAMP(value, min, max) ( (value <= min) ? min : ((value >= max) ? max : value) )
+
 #endif // !PXPLATFORM_WINDOWS

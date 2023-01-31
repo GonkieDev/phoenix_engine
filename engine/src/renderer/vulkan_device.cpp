@@ -26,6 +26,9 @@ PXAPI b8
 SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *tempArena);
 
 PXAPI b8
+VulkanDeviceDetectDepthFormat(vulkan_device *device);
+
+PXAPI b8
 VulkanCreateDevice(vulkan_context *context, mem_arena *permArena, mem_arena *tempArena)
 {
     if (!SelectPhysicalDevice(context, permArena, tempArena))
@@ -433,4 +436,39 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
 
     PXINFO("Physical device selected!");
     return 1;
+}
+
+PXAPI b8
+VulkanDeviceDetectDepthFormat(vulkan_device *device)
+{
+    VkFormat desiredFormats[3] = {
+        VK_FORMAT_D32_SFLOAT,
+        VK_FORMAT_D32_SFLOAT_S8_UINT,
+        VK_FORMAT_D24_UNORM_S8_UINT
+    };
+
+    u32 flags = VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    for_u32(formatIndex, ArrayLen(desiredFormats))
+    {
+        VkFormatProperties properties;
+        vkGetPhysicalDeviceFormatProperties(
+            device->physicalDevice,
+            desiredFormats[formatIndex],
+            &properties);
+
+        if ((properties.linearTilingFeatures & flags) == flags)
+        {
+            device->depthFormat = desiredFormats[formatIndex];
+            return 1;
+        }
+
+        if ((properties.optimalTilingFeatures & flags) == flags)
+        {
+            device->depthFormat = desiredFormats[formatIndex];
+            return 1;
+        }
+    }
+
+    return 0;
 }

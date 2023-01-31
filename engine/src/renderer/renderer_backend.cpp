@@ -4,6 +4,7 @@
 
 #include <renderer/vulkan_renderer_backend_helpers.cpp>
 #include <renderer/vulkan_device.cpp>
+#include <renderer/vulkan_image.cpp>
 #include <renderer/vulkan_swapchain.cpp>
 
 // NOTE: declare backendContext before cpp includes so that they can use it
@@ -119,6 +120,13 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
         return 0;
     }
 
+    VulkanSwapchainCreate(
+        &backendContext,
+        engineState->width,
+        engineState->height,
+        &engineState->permArena,
+        &backendContext.swapchain);
+
     PXINFO("Vulkan renderer initialized sucessfully.");
     return 1;
 }
@@ -127,6 +135,8 @@ PXAPI void
 ShutdownRendererBackend(renderer_backend *backend)
 {
     PXDEBUG("Shutting down renderer backend.");
+
+    VulkanSwapchainDestroy(&backendContext, &backendContext.swapchain);
 
     vkDestroySurfaceKHR(backendContext.instance, backendContext.surface, backendContext.allocator);
 

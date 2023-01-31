@@ -7,9 +7,11 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 - vulkan custom allocator
 - memory logging
 - init multiple arenas in same contiguous block
+- move functions to vk helpers
 
 ## Vulkan TODOs:
 - device requirements should be driven by game / engine
+- disable vsync
 
 ### Platform TODOs:
 - minimise windows results in `engineState.suspended = 1`

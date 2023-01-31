@@ -35,6 +35,19 @@ struct vulkan_device
     VkPhysicalDeviceProperties       properties;
     VkPhysicalDeviceFeatures         features;
     VkPhysicalDeviceMemoryProperties memoryProperties;
+
+    VkFormat depthFormat;
+};
+
+struct vulkan_image
+{
+    u32 width;
+    u32 height;
+
+    VkImage         handle;
+    VkDeviceMemory  memory;
+    VkImageView     view;
+
 };
 
 struct vulkan_swapchain
@@ -46,6 +59,8 @@ struct vulkan_swapchain
     u32                imageCount;
     VkImage            *images;
     VkImageView        *views;
+
+    vulkan_image       depthAttachment;
 };
 
 struct vulkan_context
@@ -54,6 +69,11 @@ struct vulkan_context
     VkAllocationCallbacks       *allocator = 0;
     vulkan_device               device;
     VkSurfaceKHR                surface;
+
+    vulkan_swapchain            swapchain;
+    u32                         imageIndex;
+    u32                         currentFrame;
+    b8                          recreatingSwapchain;
 
     u32 framebufferWidth;
     u32 framebufferHeight;
