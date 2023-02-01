@@ -32,6 +32,8 @@ struct vulkan_device
     VkQueue presentQueue;
     VkQueue transferQueue;
 
+    VkCommandPool graphicsCommandPool;
+
     VkPhysicalDeviceProperties       properties;
     VkPhysicalDeviceFeatures         features;
     VkPhysicalDeviceMemoryProperties memoryProperties;
@@ -87,12 +89,12 @@ struct vulkan_renderpass
 
 enum vulkan_command_buffer_state
 {
+    COMMAND_BUFFER_STATE_NOT_ALLOCATED,
     COMMAND_BUFFER_STATE_READY,
     COMMAND_BUFFER_STATE_RECORDING,
     COMMAND_BUFFER_STATE_IN_RENDERPASS,
     COMMAND_BUFFER_STATE_RECORDING_ENDED,
-    COMMAND_BUFFER_STATE_SUBMITTED,
-    COMMAND_BUFFER_STATE_NOT_ALLOCATED
+    COMMAND_BUFFER_STATE_SUBMITTED
 };
 
 struct vulkan_command_buffer
@@ -118,6 +120,8 @@ struct vulkan_context
     u32 framebufferHeight;
 
     vulkan_renderpass mainRenderpass;
+
+    vulkan_command_buffer *graphicsCommandBuffers;
 
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT    debugMessenger;

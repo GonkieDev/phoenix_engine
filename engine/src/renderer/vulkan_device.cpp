@@ -119,6 +119,17 @@ VulkanCreateDevice(vulkan_context *context, mem_arena *permArena, mem_arena *tem
 
     PXINFO("Queues obtained.");
 
+    // Create command pool
+    VkCommandPoolCreateInfo commandPoolCreateInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+    commandPoolCreateInfo.queueFamilyIndex = context->device.graphicsQueueIndex;
+    commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    VK_CHECK(vkCreateCommandPool(
+        context->device.logicalDevice,
+        &commandPoolCreateInfo,
+        context->allocator,
+        &context->device.graphicsCommandPool));
+    PXINFO("Graphics command pool created!");
+
     return 1;
 }
 
@@ -129,6 +140,11 @@ VulkanDestroyDevice(vulkan_context *context)
     context->device.graphicsQueue = 0;
     context->device.presentQueue  = 0;
     context->device.transferQueue = 0;
+
+    vkDestroyCommandPool(
+        context->device.logicalDevice,
+        context->device.graphicsCommandPool,
+        context->allocator);
 
     PXINFO("Destroying vulkan logical device...");
     if (context->device.logicalDevice)

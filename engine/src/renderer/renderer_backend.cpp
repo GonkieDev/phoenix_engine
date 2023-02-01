@@ -7,6 +7,8 @@
 #include <renderer/vulkan_image.cpp>
 #include <renderer/vulkan_swapchain.cpp>
 #include <renderer/vulkan_renderpass.cpp>
+#include <renderer/vulkan_command_buffer.cpp>
+#include <renderer/vulkan_framebuffer.cpp>
 
 // NOTE: declare backendContext before cpp includes so that they can use it
 global_var vulkan_context backendContext;
@@ -16,6 +18,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
     VkDebugUtilsMessageTypeFlagsEXT msgType,
     const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
     void* user_data);
+
+PXAPI void
+BackendCreateCommandBuffers(renderer_backend *backend, mem_arena *permArena);
 
 PXAPI b8
 InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engineState)
@@ -136,6 +141,8 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
         0,
         &backendContext.mainRenderpass);
 
+    BackendCreateCommandBuffers(backend, &engineState->permArena);
+
     PXINFO("Vulkan renderer initialized sucessfully.");
     return 1;
 }
@@ -144,6 +151,19 @@ PXAPI void
 ShutdownRendererBackend(renderer_backend *backend)
 {
     PXDEBUG("Shutting down renderer backend.");
+
+    // Command buffers
+    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    {
+        if (backendContext.graphicsCommandBuffers[imageIndex].handle)
+        {
+            VulkanCommandBufferFree(
+                &backendContext,
+                backendContext.device.graphicsCommandPool,
+                backendContext.graphicsCommandBuffers + imageIndex);
+            backendContext.graphicsCommandBuffers[imageIndex].handle = 0;
+        }
+    }
 
     VulkanRenderPassDestroy(&backendContext, &backendContext.mainRenderpass);
 
@@ -209,4 +229,39 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
     }
 
     return VK_FALSE;
+}
+
+PXAPI void
+BackendCreateCommandBuffers(renderer_backend *backend, mem_arena *permArena)
+{
+    if (!backendContext.graphicsCommandBuffers)
+    {
+        backendContext.graphicsCommandBuffers = (vulkan_command_buffer *)PXMemoryArenaAlloc(
+            permArena, sizeof(vulkan_command_buffer) * backendContext.swapchain.imageCount);
+
+        for_u32(imageIndex, backendContext.swapchain.imageCount)
+        {
+            backendContext.graphicsCommandBuffers[imageIndex] = {};
+        }
+    }
+
+    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    {
+        if (backendContext.graphicsCommandBuffers[imageIndex].handle)
+        {
+            VulkanCommandBufferFree(
+                &backendContext,
+                backendContext.device.graphicsCommandPool,
+                &backendContext.graphicsCommandBuffers[imageIndex]);
+        }
+
+        backendContext.graphicsCommandBuffers[imageIndex] = {};
+        VulkanCommandBufferAllocate(
+            &backendContext,
+            backendContext.device.graphicsCommandPool,
+            1,
+            &backendContext.graphicsCommandBuffers[imageIndex]);
+    }
+
+    PXINFO("Vulkan command buffers created.");
 }
