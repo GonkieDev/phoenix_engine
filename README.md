@@ -1,17 +1,25 @@
 # Phoenix Engine
 Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulkan. It also provides platform independent input.
 
-## TODOs:
+# FIXES:
 - !!!! FIX PXMemoryArenaAllocate, needs to be aligned properly
-- vulkan setup
-- vulkan custom allocator
+
+# TODOs:
+
+## Memory TODOs:
 - memory logging
 - init multiple arenas in same contiguous block
-- move functions to vk helpers
+- Specific memory arena for renderer?
+- memory allocate multiple structs at the same time - macro
+- add casting to the allocation macro
+- clear frame arena after initialisation and every frame
 
 ## Vulkan TODOs:
+- move functions to vk helpers
+- vulkan setup
+- vulkan custom allocator
 - device requirements should be driven by game / engine
-- disable vsync
+- configurable vsync
 
 ### Platform TODOs:
 - minimise windows results in `engineState.suspended = 1`
@@ -32,3 +40,8 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 ## Flags
 - `_DEBUG` to activate debug
 - `#define PX_MAX_GAMEPADS [1-4]` before including the headers, this number should not be bigger than 4
+
+## Reminders for myself
+
+### Tags to look for:
+`xxmemoryxx`: memory related stuff

@@ -9,6 +9,8 @@
         PX_ASSERT(expr == VK_SUCCESS);  \
     }
 
+// TODO: xxmemoryxx change most of these u32's to be u16's
+
 struct vulkan_swapchain_support_info
 {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -52,19 +54,6 @@ struct vulkan_image
 
 };
 
-struct vulkan_swapchain
-{
-    VkSurfaceFormatKHR imageFormat;
-    u8                 maxFramesInFlight;
-    VkSwapchainKHR     handle;
-
-    u32                imageCount;
-    VkImage            *images;
-    VkImageView        *views;
-
-    vulkan_image       depthAttachment;
-};
-
 enum vulkan_renderpass_state
 {
     RENDERPASS_STATE_READY,
@@ -87,6 +76,14 @@ struct vulkan_renderpass
     vulkan_renderpass_state state;
 };
 
+struct vulkan_framebuffer
+{
+    VkFramebuffer handle;
+    u32 attachmentCount;
+    VkImageView *attachments;
+    vulkan_renderpass *renderpass;
+};
+
 enum vulkan_command_buffer_state
 {
     COMMAND_BUFFER_STATE_NOT_ALLOCATED,
@@ -103,6 +100,20 @@ struct vulkan_command_buffer
     vulkan_command_buffer_state state;
 };
 
+struct vulkan_swapchain
+{
+    VkSurfaceFormatKHR imageFormat;
+    u8                 maxFramesInFlight;
+    VkSwapchainKHR     handle;
+
+    u32                imageCount;
+    VkImage            *images;
+    VkImageView        *views;
+
+    vulkan_image       depthAttachment;
+
+    vulkan_framebuffer *framebuffers;
+};
 
 struct vulkan_context
 {

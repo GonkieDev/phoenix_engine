@@ -127,7 +127,7 @@ PhoenixRun(engine_state *engineState)
     return 1;
 }
 
-PXAPI void
+PXAPI inline void
 PhoenixShutdown(engine_state *engineState)
 {
     GameEnd(engineState->gameState);
@@ -135,7 +135,16 @@ PhoenixShutdown(engine_state *engineState)
     RendererShutdown(engineState);
 }
 
-PXAPI b8
+PXAPI inline void
+PhoenixGetFramebufferSize(u32 width, u32 height, engine_state *engineState)
+{
+    engineState->width = width;
+    engineState->height = height;
+
+    RendererOnResized(width, height, engineState);
+}
+
+PXAPI inline b8
 PhoenixInitMemory(s64 permArenaSize, s64 frameArenaSize, engine_state *engineState)
 {
     PX_ASSERT_MSG(permArenaSize, "A permanent arena size is required!");

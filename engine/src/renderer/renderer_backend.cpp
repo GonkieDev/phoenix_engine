@@ -22,11 +22,22 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
 PXAPI void
 BackendCreateCommandBuffers(renderer_backend *backend, mem_arena *permArena);
 
+PXAPI void
+BackendRegenerateBuffers(
+    renderer_backend *backend,
+    vulkan_swapchain *swapchain,
+    vulkan_renderpass *renderpass,
+    mem_arena *permArena);
+
+// TODO: get rid of allocations in these functions that can be used with variable lengths stack arrays
 PXAPI b8
 InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engineState)
 {
     // TODO: custom allocator
     backendContext.allocator = 0;
+
+    backendContext.framebufferWidth = engineState->width;
+    backendContext.framebufferHeight = engineState->height;
 
     VkApplicationInfo appInfo = {};
     appInfo.sType               = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -141,6 +152,13 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
         0,
         &backendContext.mainRenderpass);
 
+    // Swapchain framebuffers
+    backendContext.swapchain.framebuffers = (vulkan_framebuffer *)PXMemoryArenaAlloc(
+        &engineState->permArena,
+        sizeof(vulkan_framebuffer) * backendContext.swapchain.imageCount);
+    BackendRegenerateBuffers(backend, &backendContext.swapchain, &backendContext.mainRenderpass,
+        &engineState->permArena);
+
     BackendCreateCommandBuffers(backend, &engineState->permArena);
 
     PXINFO("Vulkan renderer initialized sucessfully.");
@@ -163,6 +181,11 @@ ShutdownRendererBackend(renderer_backend *backend)
                 backendContext.graphicsCommandBuffers + imageIndex);
             backendContext.graphicsCommandBuffers[imageIndex].handle = 0;
         }
+    }
+
+    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    {
+        VulkanFramebufferDestroy(&backendContext, backendContext.swapchain.framebuffers + imageIndex);
     }
 
     VulkanRenderPassDestroy(&backendContext, &backendContext.mainRenderpass);
@@ -190,7 +213,10 @@ ShutdownRendererBackend(renderer_backend *backend)
 PXAPI void
 RendererBackendOnResize(u16 width, u16 height, renderer_backend *backend)
 {
+    backendContext.framebufferWidth  = width;
+    backendContext.framebufferHeight = height;
 
+    // TODO: finish this
 }
 
 PXAPI b8
@@ -264,4 +290,32 @@ BackendCreateCommandBuffers(renderer_backend *backend, mem_arena *permArena)
     }
 
     PXINFO("Vulkan command buffers created.");
+}
+
+
+PXAPI void
+BackendRegenerateBuffers(
+    renderer_backend *backend,
+    vulkan_swapchain *swapchain,
+    vulkan_renderpass *renderpass,
+    mem_arena *permArena)
+{
+    for_u32(imageIndex, swapchain->imageCount)
+    {
+        u32 attachmentCount = 2;
+        VkImageView attachments[] = {
+            swapchain->views[imageIndex],
+            swapchain->depthAttachment.view
+        };
+
+        VulkanFramebufferCreate(
+            &backendContext,
+            permArena,
+            renderpass,
+            backendContext.framebufferWidth, 
+            backendContext.framebufferHeight,
+            attachmentCount,
+            attachments,
+            backendContext.swapchain.framebuffers + imageIndex);
+    }
 }

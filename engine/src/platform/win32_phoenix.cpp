@@ -401,14 +401,10 @@ win32WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WM_SIZE:
         {
-            /* u32 width  = (u32)LOWORD(lParam); */
-            /* u32 height = (u32)HIWORD(lParam); */
+            u32 width  = (u32)LOWORD(lParam);
+            u32 height = (u32)HIWORD(lParam);
 
-            // TODO: fire event to resize screen
-
-            /* platformState->windowResized = 1; */
-            /* platformState->width = width; */
-            /* platformState->height = height; */
+            PhoenixGetFramebufferSize(width, height, engineState);
         } break;
 
         case WM_SYSKEYUP:
