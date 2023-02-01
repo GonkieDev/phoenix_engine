@@ -6,6 +6,7 @@
 #include <renderer/vulkan_device.cpp>
 #include <renderer/vulkan_image.cpp>
 #include <renderer/vulkan_swapchain.cpp>
+#include <renderer/vulkan_renderpass.cpp>
 
 // NOTE: declare backendContext before cpp includes so that they can use it
 global_var vulkan_context backendContext;
@@ -127,6 +128,14 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
         &engineState->permArena,
         &backendContext.swapchain);
 
+    VulkanRenderpassCreate(
+        &backendContext,
+        0, 0, backendContext.framebufferWidth, backendContext.framebufferHeight,
+        0.5f, 0.0f, 0.5f, 1.0f,
+        1.0f,
+        0,
+        &backendContext.mainRenderpass);
+
     PXINFO("Vulkan renderer initialized sucessfully.");
     return 1;
 }
@@ -135,6 +144,8 @@ PXAPI void
 ShutdownRendererBackend(renderer_backend *backend)
 {
     PXDEBUG("Shutting down renderer backend.");
+
+    VulkanRenderPassDestroy(&backendContext, &backendContext.mainRenderpass);
 
     VulkanSwapchainDestroy(&backendContext, &backendContext.swapchain);
 

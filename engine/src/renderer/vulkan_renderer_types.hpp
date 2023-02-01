@@ -63,6 +63,45 @@ struct vulkan_swapchain
     vulkan_image       depthAttachment;
 };
 
+enum vulkan_renderpass_state
+{
+    RENDERPASS_STATE_READY,
+    RENDERPASS_STATE_RECORDING,
+    RENDERPASS_STATE_IN_RENDER_PASS,
+    RENDERPASS_STATE_IN_RECORDING_ENDED,
+    RENDERPASS_STATE_IN_SUBMITTED,
+    RENDERPASS_STATE_NOT_ALLOCATED
+};
+
+struct vulkan_renderpass
+{
+    VkRenderPass handle;
+    f32 x, y, w, h;
+    f32 r,  g,  b,  a; // Clear color
+
+    f32 depth;
+    u32 stencil;
+
+    vulkan_renderpass_state state;
+};
+
+enum vulkan_command_buffer_state
+{
+    COMMAND_BUFFER_STATE_READY,
+    COMMAND_BUFFER_STATE_RECORDING,
+    COMMAND_BUFFER_STATE_IN_RENDERPASS,
+    COMMAND_BUFFER_STATE_RECORDING_ENDED,
+    COMMAND_BUFFER_STATE_SUBMITTED,
+    COMMAND_BUFFER_STATE_NOT_ALLOCATED
+};
+
+struct vulkan_command_buffer
+{
+    VkCommandBuffer handle;
+    vulkan_command_buffer_state state;
+};
+
+
 struct vulkan_context
 {
     VkInstance                  instance;
@@ -77,6 +116,8 @@ struct vulkan_context
 
     u32 framebufferWidth;
     u32 framebufferHeight;
+
+    vulkan_renderpass mainRenderpass;
 
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT    debugMessenger;

@@ -23,6 +23,9 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 - mouse dx, dy
 - FIX: sometimes inputs get processed twice?
 
+### Low priority TODOs:
+- Replace GLM with my own maths lib
+
 ## Dependencies
 - GLM
 
