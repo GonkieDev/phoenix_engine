@@ -268,12 +268,13 @@ VulkanSwapchainPresent(
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
         // Swapchain is out of date, suboptimal or framebuffer was resized
-        VulkanSwapchainRecreate(context, context->framebufferWidth, context->framebufferHeight, swapchain);
         return;
     }
-
-    if (result != VK_SUCCESS)
+    else if (result != VK_SUCCESS)
     {
         PXFATAL("Failed to present swapchain image!");
     }
+
+    // Increment (and loop) the index
+    context->currentFrame = (context->currentFrame + 1) % context->swapchain.maxFramesInFlight;
 }

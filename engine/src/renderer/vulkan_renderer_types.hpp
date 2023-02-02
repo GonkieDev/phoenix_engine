@@ -115,6 +115,12 @@ struct vulkan_swapchain
     vulkan_framebuffer *framebuffers;
 };
 
+struct vulkan_fence 
+{
+    VkFence handle;
+    b8 signaled;
+};
+
 struct vulkan_context
 {
     VkInstance                  instance;
@@ -129,10 +135,19 @@ struct vulkan_context
 
     u32 framebufferWidth;
     u32 framebufferHeight;
+    u64 framebufferSizedGeneration;
+    u64 lastFramebufferGeneration;
 
     vulkan_renderpass mainRenderpass;
 
     vulkan_command_buffer *graphicsCommandBuffers;
+
+    VkSemaphore *imageAvailableSemaphores;
+    VkSemaphore *queueCompleteSemaphores;
+
+    u32 inFlightFenceCount;
+    vulkan_fence *inFlightFences;
+    vulkan_fence **imagesInFlight; // NOTE: these fences are not allocated by this list
 
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT    debugMessenger;

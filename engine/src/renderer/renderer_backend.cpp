@@ -9,6 +9,7 @@
 #include <renderer/vulkan_renderpass.cpp>
 #include <renderer/vulkan_command_buffer.cpp>
 #include <renderer/vulkan_framebuffer.cpp>
+#include <renderer/vulkan_fence.cpp>
 
 // NOTE: declare backendContext before cpp includes so that they can use it
 global_var vulkan_context backendContext;
@@ -161,6 +162,47 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
 
     BackendCreateCommandBuffers(backend, &engineState->permArena);
 
+    // Create sync objects
+    // Allocate memory
+    backendContext.imageAvailableSemaphores = (VkSemaphore *)PXMemoryArenaAlloc(
+        &engineState->permArena,
+        sizeof(VkSemaphore) * backendContext.swapchain.maxFramesInFlight);
+    backendContext.queueCompleteSemaphores = (VkSemaphore *)PXMemoryArenaAlloc(
+        &engineState->permArena,
+        sizeof(VkSemaphore) * backendContext.swapchain.maxFramesInFlight);
+    backendContext.inFlightFences = (vulkan_fence *)PXMemoryArenaAlloc(
+        &engineState->permArena,
+        sizeof(vulkan_fence) * backendContext.swapchain.maxFramesInFlight);
+
+    for_u32(imageIndex, backendContext.swapchain.maxFramesInFlight)
+    {
+        VkSemaphoreCreateInfo semaphoreCreateInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+
+        vkCreateSemaphore(
+            backendContext.device.logicalDevice,
+            &semaphoreCreateInfo,
+            backendContext.allocator,
+            backendContext.imageAvailableSemaphores + imageIndex);
+
+        vkCreateSemaphore(
+            backendContext.device.logicalDevice,
+            &semaphoreCreateInfo,
+            backendContext.allocator,
+            backendContext.queueCompleteSemaphores + imageIndex);
+
+        // NOTE: We want to create the fences for the first frame on a signaled state
+        // so that the application does not wait indefinetly
+        VulkanFenceCreate(&backendContext, 1, backendContext.inFlightFences + imageIndex);
+    }
+
+    backendContext.imagesInFlight = (vulkan_fence **)PXMemoryArenaAlloc(
+        &engineState->permArena,
+        sizeof(vulkan_fence *) * backendContext.swapchain.imageCount);
+    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    {
+        backendContext.imagesInFlight[imageIndex] = 0;
+    }
+
     PXINFO("Vulkan renderer initialized sucessfully.");
     return 1;
 }
@@ -169,6 +211,35 @@ PXAPI void
 ShutdownRendererBackend(renderer_backend *backend)
 {
     PXDEBUG("Shutting down renderer backend.");
+
+    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    {
+        if (backendContext.imageAvailableSemaphores[imageIndex])
+        {
+            vkDestroySemaphore(
+                backendContext.device.logicalDevice,
+                backendContext.imageAvailableSemaphores[imageIndex],
+                backendContext.allocator);
+
+            backendContext.imageAvailableSemaphores[imageIndex] = 0;
+        }
+
+        if (backendContext.queueCompleteSemaphores[imageIndex])
+        {
+            vkDestroySemaphore(
+                backendContext.device.logicalDevice,
+                backendContext.queueCompleteSemaphores[imageIndex],
+                backendContext.allocator);
+
+            backendContext.queueCompleteSemaphores[imageIndex] = 0;
+        }
+
+        VulkanFenceDestroy(&backendContext, backendContext.inFlightFences + imageIndex);
+    }
+    backendContext.imagesInFlight = 0; // NOTE: no need to deallocate since it's allocated on arena
+    backendContext.inFlightFences = 0;
+    backendContext.queueCompleteSemaphores = 0;
+    backendContext.imageAvailableSemaphores = 0;
 
     // Command buffers
     for_u32(imageIndex, backendContext.swapchain.imageCount)
@@ -182,6 +253,7 @@ ShutdownRendererBackend(renderer_backend *backend)
             backendContext.graphicsCommandBuffers[imageIndex].handle = 0;
         }
     }
+    backendContext.graphicsCommandBuffers = 0;
 
     for_u32(imageIndex, backendContext.swapchain.imageCount)
     {
@@ -215,6 +287,12 @@ RendererBackendOnResize(u16 width, u16 height, renderer_backend *backend)
 {
     backendContext.framebufferWidth  = width;
     backendContext.framebufferHeight = height;
+    backendContext.framebufferSizedGeneration++;
+
+    PXINFO("Vulkan renderer backend resized: w/h/gen: %i/%i/%llu", width, height,
+            backendContext.framebufferSizedGeneration);
+
+    // NOTE: do we want to cache the framebuffer w/h?
 
     // TODO: finish this
 }
@@ -222,6 +300,73 @@ RendererBackendOnResize(u16 width, u16 height, renderer_backend *backend)
 PXAPI b8
 RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
 {
+    if (backendContext.recreatingSwapchain)
+    {
+        VkResult result = vkDeviceWaitIdle(backendContext.device.logicalDevice);
+        if (result != VK_SUCCESS)
+        {
+            // TODO: get error string
+            PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (1) failed");
+            return 0;
+        }
+        PXINFO("Recreating swapchain, booting.");
+        return 0;
+    }
+
+    if (backendContext.framebufferSizedGeneration != backendContext.lastFramebufferGeneration)
+    {
+        VkResult result = vkDeviceWaitIdle(backendContext.device.logicalDevice);
+        if (result != VK_SUCCESS)
+        {
+            // TODO: get error string
+            PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (2) failed");
+            return 0;
+        }
+
+        // If swapchain recreation failed (because, for i.e. the window was minimised)
+        // bootout before setting the flag
+        if (!VulkanSwapchainRecreate(&backendContext, , , &backendContext.swapchain))
+        {
+            return 0;
+        }
+
+        PXINFO("Resized, booting.");
+        return 0;
+    }
+
+    if (!VulkanFenceWait(
+            &backendContext,
+            backendContext.inFlightFences + backendContext.currentFrame,
+            UINT64_MAX))
+    {
+        PXWARN("In flight fence wait faliure!");
+        return 0;
+    }
+
+    if (!VulkanSwapchainGetNextImageIndex(
+            &backendContext,
+            &backendContext.swapchain,
+            UINT64_MAX,
+            backendContext.imageAvailableSemaphores + backendContext.currentFrame,
+            0,
+            &backendContext.imageIndex))
+    {
+        return 0;
+    }
+
+    vulkan_command_buffer *commandBuffer = backendContext.graphicsCommandBuffers + backendContext.currentFrame;
+    VulkanCommandBufferReset(commandBuffer);
+    VulkanCommandBufferBegin(commandBuffer, 0, 0, 0);
+
+    // Dynamic state
+    VkViewport viewport;
+    viewport.x = 0.f;
+    viewport.y = (f32)backendContext.framebufferHeight;
+    viewport.width = (f32)backendContext.framebufferWidth;
+    viewport.height = -((f32)backendContext.framebufferHeight);
+    viewport.minDepth = 0.f;
+    viewport.maxDepth = 1.f;
+
     return 1;
 }
 

@@ -1,4 +1,4 @@
-#include "vulkan/vulkan_core.h"
+/* #include "vulkan/vulkan_core.h" */
 #include <core/engine.hpp>
 
 struct vulkan_physical_device_requirements
