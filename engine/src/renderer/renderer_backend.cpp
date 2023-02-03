@@ -334,6 +334,7 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
         return 0;
     }
 
+    // Wait for the execution of the current frame to complete
     if (!VulkanFenceWait(
             &backendContext,
             backendContext.inFlightFences + backendContext.currentFrame,
@@ -343,6 +344,9 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
         return 0;
     }
 
+    // Acquire the next image from the swapchain. Pass the semaphore that should be signaled
+    // when this complete. This semaphore will be waited upon later by the queue
+    // submission to ensure this image is available
     if (!VulkanSwapchainGetNextImageIndex(
             &backendContext,
             &backendContext.swapchain,
