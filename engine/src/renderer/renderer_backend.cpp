@@ -39,6 +39,10 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
     // TODO: custom allocator
     backendContext.allocator = 0;
 
+    backendContext.framebufferWidth = (cachedFramebufferWidth == 0 ) ? 800 : engineState->width;
+    backendContext.framebufferHeight = (cachedFramebufferHeight == 0 ) ? 800 : engineState->height;
+
+
     // TODO: change this to cached stuff
     backendContext.framebufferWidth = engineState->width;
     backendContext.framebufferHeight = engineState->height;
@@ -311,7 +315,7 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
         if (result != VK_SUCCESS)
         {
             PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (1) failed '%s'",
-                    VulkanResultString(result, 0));
+                    VulkanResultString(result, 1));
             return 0;
         }
         PXINFO("Recreating swapchain, booting.");
@@ -324,7 +328,7 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
         if (result != VK_SUCCESS)
         {
             PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (2) failed '%s'",
-                    VulkanResultString(result, 0));
+                    VulkanResultString(result, 1));
             return 0;
         }
 
@@ -382,6 +386,17 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
     scissor.extent.width = backendContext.framebufferWidth;
     scissor.extent.height = backendContext.framebufferHeight;
 
+    vkCmdSetViewport(cmdbuf->handle, 0, 1, &viewport);
+    vkCmdSetScissor(cmdbuf->handle, 0, 1, &scissor);
+
+    backendContext.mainRenderpass.w = backendContext.framebufferWidth;
+    backendContext.mainRenderpass.h = backendContext.framebufferHeight;
+
+    VulkanRenderpassBegin(
+        cmdbuf,
+        &backendContext.mainRenderpass,
+        backendContext.swapchain.framebuffers[backendContext.imageIndex].handle);
+
     return 1;
 }
 
@@ -390,6 +405,66 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
 PXAPI b8
 RendererBackendEndFrame(f32 deltaTime, renderer_backend *backend)
 {
+    vulkan_command_buffer *cmdbuf = &backendContext.graphicsCommandBuffers[backendContext.imageIndex];
+
+    VulkanRenderpassEnd(cmdbuf, &backendContext.mainRenderpass);
+
+    VulkanCommandBufferEnd(cmdbuf);
+
+    // Make sure previous frame is not using current image
+    if (backendContext.imagesInFlight[backendContext.imageIndex] != VK_NULL_HANDLE)
+    {
+        VulkanFenceWait(
+            &backendContext,
+            backendContext.imagesInFlight[backendContext.imageIndex],
+            UINT64_MAX);
+    }
+
+    // Mark image fence as in-use by this frame
+    backendContext.imagesInFlight[backendContext.imageIndex] =  
+            backendContext.inFlightFences + backendContext.imageIndex;
+
+    // Reset fence so it can be used in next frame
+    VulkanFenceReset(&backendContext, backendContext.imagesInFlight[backendContext.imageIndex]);
+
+    VkSubmitInfo submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmdbuf->handle;
+
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = backendContext.queueCompleteSemaphores + backendContext.currentFrame;
+
+    // Wait semaphores ensure that operation cannot begin until image is available
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = backendContext.imageAvailableSemaphores + backendContext.currentFrame;
+
+    VkPipelineStageFlags flags[1] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    submitInfo.pWaitDstStageMask = flags;
+
+    VkResult result = vkQueueSubmit(
+        backendContext.device.graphicsQueue,
+        1,
+        &submitInfo,
+        backendContext.inFlightFences[backendContext.currentFrame].handle);
+
+    if (result != VK_SUCCESS)
+    {
+        PXERROR("vkQueueSubmit failed with result %s", VulkanResultString(result, 1));
+        return 0;
+    }
+
+    VulkanCommandBufferUpdateSubmitted(cmdbuf);
+
+    // Present to screen
+    VulkanSwapchainPresent(
+        &backendContext,
+        &backendContext.swapchain,
+        backendContext.device.graphicsQueue,
+        backendContext.device.presentQueue,
+        backendContext.queueCompleteSemaphores[backendContext.currentFrame],
+        backendContext.imageIndex);
+
     return 1;
 }
 
