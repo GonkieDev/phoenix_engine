@@ -13,6 +13,8 @@
 
 // NOTE: declare backendContext before cpp includes so that they can use it
 global_var vulkan_context backendContext;
+global_var u16 cachedFramebufferWidth;
+global_var u16 cachedFramebufferHeight;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
@@ -37,6 +39,7 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
     // TODO: custom allocator
     backendContext.allocator = 0;
 
+    // TODO: change this to cached stuff
     backendContext.framebufferWidth = engineState->width;
     backendContext.framebufferHeight = engineState->height;
 
@@ -283,10 +286,12 @@ ShutdownRendererBackend(renderer_backend *backend)
 }
 
 PXAPI void
-RendererBackendOnResize(u16 width, u16 height, renderer_backend *backend)
+RendererBackendOnResized(u16 width, u16 height, renderer_backend *backend)
 {
-    backendContext.framebufferWidth  = width;
-    backendContext.framebufferHeight = height;
+    /* backendContext.framebufferWidth  = width; */
+    /* backendContext.framebufferHeight = height; */
+    cachedFramebufferWidth  = width;
+    cachedFramebufferHeight = height;
     backendContext.framebufferSizedGeneration++;
 
     PXINFO("Vulkan renderer backend resized: w/h/gen: %i/%i/%llu", width, height,
@@ -305,8 +310,8 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
         VkResult result = vkDeviceWaitIdle(backendContext.device.logicalDevice);
         if (result != VK_SUCCESS)
         {
-            // TODO: get error string
-            PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (1) failed");
+            PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (1) failed '%s'",
+                    VulkanResultString(result, 0));
             return 0;
         }
         PXINFO("Recreating swapchain, booting.");
@@ -318,14 +323,14 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
         VkResult result = vkDeviceWaitIdle(backendContext.device.logicalDevice);
         if (result != VK_SUCCESS)
         {
-            // TODO: get error string
-            PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (2) failed");
+            PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (2) failed '%s'",
+                    VulkanResultString(result, 0));
             return 0;
         }
 
         // If swapchain recreation failed (because, for i.e. the window was minimised)
         // bootout before setting the flag
-        if (!VulkanSwapchainRecreate(&backendContext, , , &backendContext.swapchain))
+        if (!VulkanSwapchainRecreate(&backendContext))
         {
             return 0;
         }
@@ -351,29 +356,37 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
             &backendContext,
             &backendContext.swapchain,
             UINT64_MAX,
-            backendContext.imageAvailableSemaphores + backendContext.currentFrame,
+            backendContext.imageAvailableSemaphores[backendContext.currentFrame],
             0,
             &backendContext.imageIndex))
     {
         return 0;
     }
 
-    vulkan_command_buffer *commandBuffer = backendContext.graphicsCommandBuffers + backendContext.currentFrame;
-    VulkanCommandBufferReset(commandBuffer);
-    VulkanCommandBufferBegin(commandBuffer, 0, 0, 0);
+    vulkan_command_buffer *cmdbuf = backendContext.graphicsCommandBuffers + backendContext.currentFrame;
+    VulkanCommandBufferReset(cmdbuf);
+    VulkanCommandBufferBegin(cmdbuf, 0, 0, 0);
 
     // Dynamic state
     VkViewport viewport;
     viewport.x = 0.f;
+    // NOTE: vulkan y starts at top left, this makes it start at bottom left
     viewport.y = (f32)backendContext.framebufferHeight;
     viewport.width = (f32)backendContext.framebufferWidth;
     viewport.height = -((f32)backendContext.framebufferHeight);
     viewport.minDepth = 0.f;
     viewport.maxDepth = 1.f;
 
+    VkRect2D scissor;
+    scissor.offset.x = scissor.offset.y = 0; 
+    scissor.extent.width = backendContext.framebufferWidth;
+    scissor.extent.height = backendContext.framebufferHeight;
+
     return 1;
 }
 
+// NOTE: !!! RendererBackendEndFrame !!! should NOT get called
+// if RendererBackendBeginFrame fails
 PXAPI b8
 RendererBackendEndFrame(f32 deltaTime, renderer_backend *backend)
 {

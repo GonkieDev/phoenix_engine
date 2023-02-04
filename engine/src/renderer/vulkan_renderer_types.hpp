@@ -133,9 +133,17 @@ struct vulkan_context
     u32                         currentFrame;
     b8                          recreatingSwapchain;
 
-    u32 framebufferWidth;
-    u32 framebufferHeight;
+    // Current width/height
+    u64 framebufferWidth;
+    u64 framebufferHeight;
+
+    // Current generation of framebuffer size. If it does not match 
+    // lastFramebufferGeneration, a new framebuffer should be
+    // generated.
     u64 framebufferSizedGeneration;
+
+    // The generation of the framebuffer when it was last created.
+    // Set to framebufferSizedGeneration when updated.
     u64 lastFramebufferGeneration;
 
     vulkan_renderpass mainRenderpass;
