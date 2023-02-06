@@ -53,7 +53,7 @@ VulkanCreateDevice(vulkan_context *context, mem_arena *permArena, mem_arena *tem
     }
 
     VkDeviceQueueCreateInfo queueCreateInfos[qIndexCount];
-    for_u32(i, qIndexCount)
+    for (u32 i = 0; i < qIndexCount; i++)
     {
         f32 queuePriority = 1.0f;
         queueCreateInfos[i] = {};
@@ -417,7 +417,9 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
                     break;
             }
 
-            for_u32(memoryHeapIndex, memoryProperties.memoryHeapCount)
+            for (u32 memoryHeapIndex = 0;
+                 memoryHeapIndex < memoryProperties.memoryHeapCount;
+                 memoryHeapIndex++)
             {
                 f32 memorySizeGiB = (((f32)memoryProperties.memoryHeaps[memoryHeapIndex].size) / 1024.f / 1024.f / 1024.f);
                 if (memoryProperties.memoryHeaps[memoryHeapIndex].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
@@ -465,7 +467,7 @@ VulkanDeviceDetectDepthFormat(vulkan_device *device)
 
     u32 flags = VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-    for_u32(formatIndex, ArrayLen(desiredFormats))
+    for (u32 formatIndex = 0; formatIndex < ArrayLen(desiredFormats); formatIndex++)
     {
         VkFormatProperties properties;
         vkGetPhysicalDeviceFormatProperties(

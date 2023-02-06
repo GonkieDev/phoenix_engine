@@ -18,7 +18,7 @@ VulkanFramebufferCreate(
             permArena, sizeof(VkImageView) * attachmentCount);
     }
 
-    for_u32(attachmentIndex, attachmentCount)
+    for (u32 attachmentIndex = 0; attachmentIndex < attachmentCount; attachmentIndex++)
     {
         outFramebuffer->attachments[attachmentIndex] = attachments[attachmentIndex];
     }

@@ -133,18 +133,22 @@ PhoenixShutdown(engine_state *engineState)
     GameEnd(engineState->gameState);
 
     RendererShutdown(engineState);
+
+    ShutdownLogging();
 }
 
-// TODO: name this something else
 PXAPI inline void
-PhoenixGetFramebufferSize(u32 width, u32 height, engine_state *engineState)
+PhoenixOnWindowResize(u32 width, u32 height, engine_state *engineState)
 {
+    // Window minimisation
     if (width == 0 || height == 0)
     {
         PXINFO("Suspended.");
         engineState->isSuspended = 1;
         return;
     }
+
+    engineState->isSuspended = 0;
 
     if (width == engineState->width && height == engineState->height)
     {
@@ -155,6 +159,8 @@ PhoenixGetFramebufferSize(u32 width, u32 height, engine_state *engineState)
     engineState->height = height;
 
     RendererOnResized(width, height, engineState);
+
+    GameOnResize(engineState->width, engineState->height, engineState->gameState);
 }
 
 PXAPI inline b8

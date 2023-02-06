@@ -401,10 +401,14 @@ win32WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WM_SIZE:
         {
-            u32 width  = (u32)LOWORD(lParam);
-            u32 height = (u32)HIWORD(lParam);
+            /* u32 width  = (u32)LOWORD(lParam); */
+            /* u32 height = (u32)HIWORD(lParam); */
+            RECT clientRect;
+            GetClientRect(hwnd, &clientRect);
+            u32 width  = clientRect.right - clientRect.left;
+            u32 height = clientRect.bottom - clientRect.top;
 
-            PhoenixGetFramebufferSize(width, height, engineState);
+            PhoenixOnWindowResize(width, height, engineState);
         } break;
 
         case WM_SYSKEYUP:

@@ -187,7 +187,7 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
         &engineState->permArena,
         sizeof(vulkan_fence) * backendContext.swapchain.maxFramesInFlight);
 
-    for_u32(imageIndex, backendContext.swapchain.maxFramesInFlight)
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.maxFramesInFlight; imageIndex++)
     {
         VkSemaphoreCreateInfo semaphoreCreateInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
@@ -211,7 +211,7 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
     backendContext.imagesInFlight = (vulkan_fence **)PXMemoryArenaAlloc(
         &engineState->permArena,
         sizeof(vulkan_fence *) * backendContext.swapchain.imageCount);
-    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
     {
         backendContext.imagesInFlight[imageIndex] = 0;
     }
@@ -225,7 +225,9 @@ ShutdownRendererBackend(renderer_backend *backend)
 {
     PXDEBUG("Shutting down renderer backend.");
 
-    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    vkDeviceWaitIdle(backendContext.device.logicalDevice);
+
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
     {
         if (backendContext.imageAvailableSemaphores[imageIndex])
         {
@@ -255,7 +257,7 @@ ShutdownRendererBackend(renderer_backend *backend)
     backendContext.imageAvailableSemaphores = 0;
 
     // Command buffers
-    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
     {
         if (backendContext.graphicsCommandBuffers[imageIndex].handle)
         {
@@ -268,7 +270,7 @@ ShutdownRendererBackend(renderer_backend *backend)
     }
     backendContext.graphicsCommandBuffers = 0;
 
-    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
     {
         VulkanFramebufferDestroy(&backendContext, backendContext.swapchain.framebuffers + imageIndex);
     }
@@ -505,13 +507,13 @@ BackendCreateCommandBuffers(renderer_backend *backend, mem_arena *permArena)
         backendContext.graphicsCommandBuffers = (vulkan_command_buffer *)PXMemoryArenaAlloc(
             permArena, sizeof(vulkan_command_buffer) * backendContext.swapchain.imageCount);
 
-        for_u32(imageIndex, backendContext.swapchain.imageCount)
+        for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
         {
             backendContext.graphicsCommandBuffers[imageIndex] = {};
         }
     }
 
-    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
     {
         if (backendContext.graphicsCommandBuffers[imageIndex].handle)
         {
@@ -540,7 +542,7 @@ BackendRegenerateBuffers(
     vulkan_renderpass *renderpass,
     mem_arena *permArena)
 {
-    for_u32(imageIndex, swapchain->imageCount)
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
     {
         u32 attachmentCount = 2;
         VkImageView attachments[] = {
@@ -579,7 +581,7 @@ SwapchainRecreate(renderer_backend *backend)
 
     vkDeviceWaitIdle(backendContext.device.logicalDevice);
 
-    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
     {
         backendContext.imagesInFlight[imageIndex] = 0;
     }
@@ -608,7 +610,7 @@ SwapchainRecreate(renderer_backend *backend)
     backendContext.lastFramebufferGeneration = backendContext.framebufferSizedGeneration;
 
     // Cleanup swapchain
-    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
     {
         VulkanCommandBufferFree(
             &backendContext,
@@ -616,7 +618,7 @@ SwapchainRecreate(renderer_backend *backend)
             backendContext.graphicsCommandBuffers + imageIndex);
     }
 
-    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
     {
         VulkanFramebufferDestroy(&backendContext, backendContext.swapchain.framebuffers + imageIndex);
     }

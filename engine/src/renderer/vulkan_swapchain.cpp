@@ -34,7 +34,7 @@ InternalVulkanCreateSwapchain(vulkan_context *context, u32 width, u32 height, vu
     }
 
     VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
-    for_u32(i, context->device.swapchainSupportInfo.presentModesCount)
+    for (u32 i = 0; i < context->device.swapchainSupportInfo.presentModesCount; i++)
     {
         VkPresentModeKHR mode = context->device.swapchainSupportInfo.presentModes[i];
         if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
@@ -127,7 +127,7 @@ InternalVulkanCreateSwapchain(vulkan_context *context, u32 width, u32 height, vu
     VK_CHECK(vkGetSwapchainImagesKHR(context->device.logicalDevice, outSwapchain->handle, &outSwapchain->imageCount,
         outSwapchain->images));
 
-    for_u32(viewIndex, outSwapchain->imageCount)
+    for (u32 viewIndex = 0; viewIndex < outSwapchain->imageCount; viewIndex++)
     {
         VkImageViewCreateInfo viewCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
         viewCreateInfo.pNext            = 0;
@@ -180,7 +180,7 @@ InternalVulkanDestroySwapchain(vulkan_context *context, vulkan_swapchain *swapch
     vkDeviceWaitIdle(context->device.logicalDevice);
     VulkanImageDestroy(context, &swapchain->depthAttachment);
 
-    for_u32(imageIndex, swapchain->imageCount)
+    for (u32 imageIndex = 0; imageIndex < swapchain->imageCount; imageIndex++)
     {
         vkDestroyImageView(context->device.logicalDevice, swapchain->views[imageIndex], context->allocator);
     }

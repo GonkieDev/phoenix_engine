@@ -51,7 +51,7 @@ LogOutput(log_level level, char *message, ...)
 internal b8
 InitLogging()
 {
-    // TODO(gonk): create log file
+    // TODO(gonk): create log file, and other stuff needed for logging 
     return 1;
 }
 

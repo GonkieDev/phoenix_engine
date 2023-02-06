@@ -114,7 +114,7 @@ FindMemoryIndex(vulkan_context *context, u32 typeFilter, u32 propertyFlags)
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(context->device.physicalDevice, &memoryProperties);
 
-    for_u32(i, memoryProperties.memoryTypeCount)
+    for (u32 i = 0; i < memoryProperties.memoryTypeCount; i++)
     {
         if (typeFilter & (1 << i) &&
             (memoryProperties.memoryTypes[i].propertyFlags & propertyFlags) == propertyFlags)
