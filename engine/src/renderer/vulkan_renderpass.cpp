@@ -21,6 +21,9 @@ VulkanRenderpassCreate(
     outRenderpass->b = b;
     outRenderpass->a = a;
 
+    outRenderpass->depth = depth;
+    outRenderpass->stencil = stencil;
+
     // Main subpass
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;

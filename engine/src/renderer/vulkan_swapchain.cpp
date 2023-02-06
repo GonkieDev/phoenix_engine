@@ -177,6 +177,7 @@ InternalVulkanCreateSwapchain(vulkan_context *context, u32 width, u32 height, vu
 PXAPI inline void
 InternalVulkanDestroySwapchain(vulkan_context *context, vulkan_swapchain *swapchain)
 {
+    vkDeviceWaitIdle(context->device.logicalDevice);
     VulkanImageDestroy(context, &swapchain->depthAttachment);
 
     for_u32(imageIndex, swapchain->imageCount)

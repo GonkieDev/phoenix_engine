@@ -157,6 +157,9 @@ struct vulkan_context
     vulkan_fence *inFlightFences;
     vulkan_fence **imagesInFlight; // NOTE: these fences are not allocated by this list
 
+    struct mem_arena *permArena;
+    struct mem_arena *tempArena;
+
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT    debugMessenger;
 #endif

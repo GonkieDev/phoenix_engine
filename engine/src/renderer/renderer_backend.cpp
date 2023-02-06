@@ -13,8 +13,8 @@
 
 // NOTE: declare backendContext before cpp includes so that they can use it
 global_var vulkan_context backendContext;
-global_var u16 cachedFramebufferWidth;
-global_var u16 cachedFramebufferHeight;
+global_var u32 cachedFramebufferWidth;
+global_var u32 cachedFramebufferHeight;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
@@ -32,10 +32,16 @@ BackendRegenerateBuffers(
     vulkan_renderpass *renderpass,
     mem_arena *permArena);
 
+PXAPI b8
+SwapchainRecreate(renderer_backend *backend);
+
 // TODO: get rid of allocations in these functions that can be used with variable lengths stack arrays
 PXAPI b8
 InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engineState)
 {
+    backendContext.permArena = &engineState->permArena;
+    backendContext.tempArena = &engineState->frameArena;
+
     // TODO: custom allocator
     backendContext.allocator = 0;
 
@@ -290,7 +296,7 @@ ShutdownRendererBackend(renderer_backend *backend)
 }
 
 PXAPI void
-RendererBackendOnResized(u16 width, u16 height, renderer_backend *backend)
+RendererBackendOnResized(u32 width, u32 height, renderer_backend *backend)
 {
     /* backendContext.framebufferWidth  = width; */
     /* backendContext.framebufferHeight = height; */
@@ -312,10 +318,9 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
     if (backendContext.recreatingSwapchain)
     {
         VkResult result = vkDeviceWaitIdle(backendContext.device.logicalDevice);
-        if (result != VK_SUCCESS)
+        if (!VulkanResultIsSuccess(result))
         {
-            PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (1) failed '%s'",
-                    VulkanResultString(result, 1));
+            PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (1) failed");
             return 0;
         }
         PXINFO("Recreating swapchain, booting.");
@@ -325,16 +330,15 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
     if (backendContext.framebufferSizedGeneration != backendContext.lastFramebufferGeneration)
     {
         VkResult result = vkDeviceWaitIdle(backendContext.device.logicalDevice);
-        if (result != VK_SUCCESS)
+        if (!VulkanResultIsSuccess(result))
         {
-            PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (2) failed '%s'",
-                    VulkanResultString(result, 1));
+            PXERROR("RendererBackendBeginFrame vkDeviceWaitIdle() (2) failed");
             return 0;
         }
 
         // If swapchain recreation failed (because, for i.e. the window was minimised)
         // bootout before setting the flag
-        if (!VulkanSwapchainRecreate(&backendContext))
+        if (!SwapchainRecreate(backend))
         {
             return 0;
         }
@@ -374,10 +378,9 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
     // Dynamic state
     VkViewport viewport;
     viewport.x = 0.f;
-    // NOTE: vulkan y starts at top left, this makes it start at bottom left
-    viewport.y = (f32)backendContext.framebufferHeight;
+    viewport.y = 0.f;
     viewport.width = (f32)backendContext.framebufferWidth;
-    viewport.height = -((f32)backendContext.framebufferHeight);
+    viewport.height = (f32)backendContext.framebufferHeight;
     viewport.minDepth = 0.f;
     viewport.maxDepth = 1.f;
 
@@ -450,7 +453,7 @@ RendererBackendEndFrame(f32 deltaTime, renderer_backend *backend)
 
     if (result != VK_SUCCESS)
     {
-        PXERROR("vkQueueSubmit failed with result %s", VulkanResultString(result, 1));
+        PXERROR("vkQueueSubmit failed with result");
         return 0;
     }
 
@@ -555,4 +558,84 @@ BackendRegenerateBuffers(
             attachments,
             backendContext.swapchain.framebuffers + imageIndex);
     }
+}
+
+PXAPI b8
+SwapchainRecreate(renderer_backend *backend)
+{
+    if (backendContext.recreatingSwapchain)
+    {
+        PXDEBUG("SwapchainRecreate called when already recreating. Booting.");
+        return 0;
+    }
+
+    if (backendContext.framebufferWidth == 0 || backendContext.framebufferHeight == 0)
+    {
+        PXDEBUG("SwapchainRecreate called when window is <1 in a dimension. Booting");
+        return 0;
+    }
+
+    backendContext.recreatingSwapchain = 1;
+
+    vkDeviceWaitIdle(backendContext.device.logicalDevice);
+
+    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    {
+        backendContext.imagesInFlight[imageIndex] = 0;
+    }
+
+    VulkanDeviceQuerySwapchainSupport(
+        backendContext.device.physicalDevice,
+        backendContext.surface,
+        backendContext.permArena,
+        &backendContext.device.swapchainSupportInfo);
+    VulkanDeviceDetectDepthFormat(&backendContext.device);
+
+    VulkanSwapchainRecreate(
+        &backendContext,
+        cachedFramebufferWidth,
+        cachedFramebufferHeight,
+        &backendContext.swapchain);
+
+    // Sync the framebuffer size with the cached size
+    backendContext.framebufferWidth  = cachedFramebufferWidth;
+    backendContext.framebufferHeight = cachedFramebufferHeight;
+    backendContext.mainRenderpass.w = backendContext.framebufferWidth;
+    backendContext.mainRenderpass.h = backendContext.framebufferHeight;
+    cachedFramebufferWidth  = 0;
+    cachedFramebufferHeight = 0;
+
+    backendContext.lastFramebufferGeneration = backendContext.framebufferSizedGeneration;
+
+    // Cleanup swapchain
+    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    {
+        VulkanCommandBufferFree(
+            &backendContext,
+            backendContext.device.graphicsCommandPool,
+            backendContext.graphicsCommandBuffers + imageIndex);
+    }
+
+    for_u32(imageIndex, backendContext.swapchain.imageCount)
+    {
+        VulkanFramebufferDestroy(&backendContext, backendContext.swapchain.framebuffers + imageIndex);
+    }
+
+    // NOTE: this is temporary, i know it's a repeat of above
+    backendContext.mainRenderpass.x = 0;
+    backendContext.mainRenderpass.y = 0;
+    backendContext.mainRenderpass.w = backendContext.framebufferWidth;
+    backendContext.mainRenderpass.h = backendContext.framebufferHeight;
+
+    BackendRegenerateBuffers(
+        backend,
+        &backendContext.swapchain,
+        &backendContext.mainRenderpass,
+        backendContext.permArena);
+
+    BackendCreateCommandBuffers(backend, backendContext.permArena);
+
+    backendContext.recreatingSwapchain = 0;
+
+    return 1;
 }

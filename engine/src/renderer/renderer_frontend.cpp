@@ -60,5 +60,5 @@ RendererDrawFrame(render_packet *packet, engine_state *engineState)
 PXAPI inline void
 RendererOnResized(u16 width, u16 height, struct engine_state *engineState)
 {
-    RendererBackendOnResize(width, height, &engineState->rendererBackend);
+    RendererBackendOnResized(width, height, &engineState->rendererBackend);
 }

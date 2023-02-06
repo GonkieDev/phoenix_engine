@@ -21,6 +21,9 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 - device requirements should be driven by game / engine
 - configurable vsync
 
+## Renderer Backend TODOs:
+- remove the arenas from function signatures since we have access to them inside the `vulkan_context`
+
 ### Platform TODOs:
 - minimise windows results in `engineState.suspended = 1`
 

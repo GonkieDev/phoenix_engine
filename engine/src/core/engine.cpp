@@ -135,9 +135,22 @@ PhoenixShutdown(engine_state *engineState)
     RendererShutdown(engineState);
 }
 
+// TODO: name this something else
 PXAPI inline void
 PhoenixGetFramebufferSize(u32 width, u32 height, engine_state *engineState)
 {
+    if (width == 0 || height == 0)
+    {
+        PXINFO("Suspended.");
+        engineState->isSuspended = 1;
+        return;
+    }
+
+    if (width == engineState->width && height == engineState->height)
+    {
+        return;
+    }
+
     engineState->width = width;
     engineState->height = height;
 
