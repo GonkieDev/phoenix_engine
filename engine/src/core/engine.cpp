@@ -1,8 +1,12 @@
-#include "engine.hpp"
+#include <core/engine.hpp>
 
-#include "logger.cpp"
-#include "clock.cpp"
-#include "pxstring.cpp"
+// Core
+#include <core/logger.cpp>
+#include <core/clock.cpp>
+#include <core/pxstring.cpp>
+// Math
+#include <math/pxmath.cpp>
+// Memory
 #include <memory/memory.cpp>
 #include <renderer/renderer_frontend.cpp>
 

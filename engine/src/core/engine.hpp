@@ -11,6 +11,9 @@ struct game_state; // NOTE: declared by user
 #include <core/clock.hpp>
 #include <core/pxstring.hpp>
 #include <renderer/renderer_frontend.hpp>
+// Math
+#include <math/math_types.hpp>
+#include <math/pxmath.hpp>
 // Memory
 #include <memory/memory.hpp>
 // Platform
