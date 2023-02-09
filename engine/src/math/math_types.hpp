@@ -40,4 +40,26 @@ union v4
     };
 };
 
-typedef v4 quat;
+union quat
+{
+#ifdef PXUSE_SIMD
+    alignas(16) __m128 data;
+#endif
+    alignas(16) f32 emts[4];
+    struct
+    {
+        f32 x;
+        f32 y;
+        f32 z;
+        f32 w;
+    };
+};
+
+
+union m4
+{
+    alignas(16) f32 data[16];
+#ifdef PXUSE_SIMD
+    alignas(16) v4 rows[4];
+#endif
+};
