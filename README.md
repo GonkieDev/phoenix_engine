@@ -1,5 +1,5 @@
 # Phoenix Engine
-![logo](https://github.com/GonkeDev/phoenix_engine/blob/main/phoenixlogo.png?raw=true)
+![logo](https://github.com/GonkieDev/phoenix_engine/blob/main/phoenixlogo.jpg)
 
 Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulkan. It also provides platform independent input.
 
