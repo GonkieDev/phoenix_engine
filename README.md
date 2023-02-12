@@ -3,6 +3,7 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 
 ## FIXES:
 - !!!! FIX PXMemoryArenaAllocate, needs to be aligned properly
+- why does it crash when ran from console/nvim but not from clicking on exe or debugger
 
 ## TODOs:
 
