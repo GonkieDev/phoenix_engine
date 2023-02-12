@@ -170,6 +170,10 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
     backendContext.swapchain.framebuffers = (vulkan_framebuffer *)PXMemoryArenaAlloc(
         &engineState->permArena,
         sizeof(vulkan_framebuffer) * backendContext.swapchain.imageCount);
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
+    {
+        backendContext.swapchain.framebuffers[imageIndex] = {};
+    }
     BackendRegenerateBuffers(backend, &backendContext.swapchain, &backendContext.mainRenderpass,
         &engineState->permArena);
 

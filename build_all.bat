@@ -9,6 +9,8 @@ if %errorlevels% neq 0 goto error
 call .\testbed\build_testbed.bat
 if %errorlevels% neq 0 goto error
 
+call .\post_build.bat
+if %errorlevels% neq 0 goto error
 
 :success
 echo "Everything built succesfully."

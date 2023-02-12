@@ -53,6 +53,8 @@ VulkanCreateDevice(vulkan_context *context, mem_arena *permArena, mem_arena *tem
     }
 
     VkDeviceQueueCreateInfo queueCreateInfos[qIndexCount];
+    // NOTE: use this to replace VLAs?
+    // VkDeviceQueueCreateInfo queueCreateInfos[32];
     for (u32 i = 0; i < qIndexCount; i++)
     {
         f32 queuePriority = 1.0f;
@@ -355,6 +357,7 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
 
     VkPhysicalDevice *physicalDevices = (VkPhysicalDevice *)
         PXMemoryArenaAlloc(tempArena, sizeof(VkPhysicalDevice) * physicalDeviceCount);
+    /* VkPhysicalDevice physicalDevices[32]; */
     VK_CHECK(vkEnumeratePhysicalDevices(context->instance, &physicalDeviceCount, physicalDevices));
 
     for (u32 i = 0; i < physicalDeviceCount; i++)
