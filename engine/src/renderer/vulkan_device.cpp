@@ -225,9 +225,11 @@ PhysicalDeviceMeetsRequirements(
 
     u32 queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, 0);
-    VkQueueFamilyProperties *queueFamilies = (VkQueueFamilyProperties *)
-        PXMemoryArenaAlloc(tempArena, sizeof(VkQueueFamilyProperties) * queueFamilyCount);
+    /* VkQueueFamilyProperties *queueFamilies = (VkQueueFamilyProperties *) */
+    /*     PXMemoryArenaAlloc(tempArena, sizeof(VkQueueFamilyProperties) * queueFamilyCount); */
+    VkQueueFamilyProperties queueFamilies[32];
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies);
+
 
     PXINFO("Graphics | Present | Compute | Transfer | Name");
     u8 minTransferScore = 255;
@@ -355,9 +357,9 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
         return 0;
     }
 
-    VkPhysicalDevice *physicalDevices = (VkPhysicalDevice *)
-        PXMemoryArenaAlloc(tempArena, sizeof(VkPhysicalDevice) * physicalDeviceCount);
-    /* VkPhysicalDevice physicalDevices[32]; */
+    /* VkPhysicalDevice *physicalDevices = (VkPhysicalDevice *) */
+    /*     PXMemoryArenaAlloc(tempArena, sizeof(VkPhysicalDevice) * physicalDeviceCount); */
+    VkPhysicalDevice physicalDevices[32];
     VK_CHECK(vkEnumeratePhysicalDevices(context->instance, &physicalDeviceCount, physicalDevices));
 
     for (u32 i = 0; i < physicalDeviceCount; i++)
