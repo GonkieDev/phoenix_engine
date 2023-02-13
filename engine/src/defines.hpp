@@ -1,5 +1,7 @@
 #pragma once
 
+#include <core/asserts.h>
+
 //
 // Types
 //
@@ -112,5 +114,12 @@ inline u32 PXDEBUGStrLen(char *buf)
 #define MIN(x, y) (x < y ? x : y)
 #define MAX(x, y) (x > y ? x : y)
 
+inline u32
+SafeTruncateU64(u64 x)
+{
+    PX_ASSERT(x <= 0xFFFFFFFF);
+    u32 result = (u32)x;
+    return result;
+}
 
 #endif // !PXPLATFORM_WINDOWS

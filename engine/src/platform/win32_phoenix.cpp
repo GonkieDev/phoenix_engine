@@ -450,3 +450,86 @@ PlatformPumpMessages()
     }
     return 1;
 }
+
+void 
+PlatformFreeFileMemory(void *memory)
+{
+    if(memory)
+    {
+        VirtualFree(memory, 0, MEM_RELEASE);
+    }
+}
+
+read_file_result 
+PlatformReadEntireFile(char *filename)
+{
+    read_file_result result = {};
+    
+    HANDLE fileHandle = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+    if(fileHandle == INVALID_HANDLE_VALUE)
+    {
+        PXERROR("FILE ERROR: Failed to get file handle when reading file '%s'", filename);
+        return result;
+    }
+
+    LARGE_INTEGER fileSize;
+    if(GetFileSizeEx(fileHandle, &fileSize))
+    {
+        u32 fileSize32 = SafeTruncateU64(fileSize.QuadPart);
+        result.contents = VirtualAlloc(0, fileSize32, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+        if(result.contents)
+        {
+            DWORD bytesRead;
+            if (ReadFile(fileHandle, result.contents, fileSize32, &bytesRead, 0) &&
+                (fileSize32 == bytesRead))
+            {
+                //NOTE: file read sucessfully
+                result.contentSize = fileSize32;
+            }
+            else
+            {
+                PXERROR("FILE: failed to read file: %s", filename);
+                PlatformFreeFileMemory(result.contents);
+                result.contents = 0;
+            }
+        } // if (result.contents)
+        else
+        {
+            PXERROR("FILE: Failed to allocate memory for file '%s'", filename);
+        }
+    } // if(GetFileSizeEx(fileHandle, &fileSize)) 
+    else
+    {
+        PXERROR("FILE: GetFileSizeEx() failed for file '%s'", filename);
+    }
+    
+    CloseHandle(fileHandle);
+    return result;
+}
+
+b8 
+PlatformWriteEntireFile(char *filename, u32 memorySize, void *memory)
+{
+    b32 result = 0;
+    
+    HANDLE fileHandle = CreateFileA(filename, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+
+    if (fileHandle == INVALID_HANDLE_VALUE)
+    {
+        PXERROR("FILE: Failed to get file handle when writing t file '%s'", filename);
+        return 0;
+    }
+
+    DWORD bytesWritten;
+    if(!WriteFile(fileHandle, memory, memorySize, &bytesWritten, 0))
+    {
+        PXERROR("FILE: Write to '%s' failed.", filename);
+    }
+    else
+    {
+        result = (bytesWritten == memorySize);
+    }
+
+    CloseHandle(fileHandle);
+    return result;
+}

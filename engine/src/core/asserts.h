@@ -1,7 +1,5 @@
 #pragma once
 
-#include <defines.hpp>
-
 #ifdef _DEBUG
 
 #ifdef _MSC_VER
@@ -11,7 +9,7 @@
 #define debugBreak() __buildin_trap()
 #endif 
 
-void ReportAssertionFailure(char *expression, char *message, char *file, i32 line);
+void ReportAssertionFailure(char *expression, char *message, char *file, int line);
 
 #define PX_ASSERT(expr)                                                     \
     {                                                                       \

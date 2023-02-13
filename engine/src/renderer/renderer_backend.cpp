@@ -11,6 +11,9 @@
 #include <renderer/vulkan_framebuffer.cpp>
 #include <renderer/vulkan_fence.cpp>
 
+#include <renderer/shaders/vulkan_shader_utils.cpp>
+#include <renderer/shaders/vulkan_shader_object.cpp>
+
 // NOTE: declare backendContext before cpp includes so that they can use it
 global_var vulkan_context backendContext;
 global_var u32 cachedFramebufferWidth;

@@ -121,6 +121,27 @@ struct vulkan_fence
     b8 signaled;
 };
 
+struct vulkan_shader_stage
+{
+    VkShaderModuleCreateInfo createInfo;
+    VkShaderModule handle;
+    VkPipelineShaderStageCreateInfo shaderStageCreateInfo;
+};
+
+struct vulkan_pipeline
+{
+    VkPipeline handle;
+    VkPipelineLayout pipelineLayout;
+};
+
+#define SHADER_OBJECT_STAGE_COUNT 2
+struct vulkan_shader_object
+{
+    // vertex and fragment
+    vulkan_shader_stage stages[SHADER_OBJECT_STAGE_COUNT];
+    vulkan_pipeline pipeline;
+};
+
 struct vulkan_context
 {
     VkInstance                  instance;

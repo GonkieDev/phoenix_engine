@@ -13,6 +13,11 @@ set out_shader_path=%out_assets_path%shaders\
 
 set common_compiler_flags=
 
+
+REM Make sure these match the code!
+set object_shader_name=PHOENIX.ObjectShader
+
+
 REM Run from root dir!
 if not exist "%cd%\bin\assets\shaders\" mkdir "%cd%\bin\assets\shaders\"
 
@@ -20,11 +25,11 @@ if not exist "%cd%\bin\assets\shaders\" mkdir "%cd%\bin\assets\shaders\"
 
 echo "Compiling shaders..."
 
-%shaderCompiler% %common_compiler_flags% -fshader-stage=vert %in_shader_path%Phoenix_ObjectShader.vert.glsl -o %out_shader_path%Phoenix_ObjectShader.vert.spv
+%shaderCompiler% %common_compiler_flags% -fshader-stage=vert %in_shader_path%%object_shader_name%.vert.glsl -o %out_shader_path%%object_shader_name%.vert.spv
 
 if %errorlevel% neq 0 goto error
 
-%shaderCompiler% %common_compiler_flags% -fshader-stage=frag %in_shader_path%Phoenix_ObjectShader.frag.glsl -o %out_shader_path%Phoenix_ObjectShader.frag.spv
+%shaderCompiler% %common_compiler_flags% -fshader-stage=frag %in_shader_path%%object_shader_name%.frag.glsl -o %out_shader_path%%object_shader_name%.frag.spv
 
 if %errorlevel% neq 0 goto error
 
