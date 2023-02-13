@@ -231,7 +231,7 @@ ShutdownRendererBackend(renderer_backend *backend)
 
     vkDeviceWaitIdle(backendContext.device.logicalDevice);
 
-    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
+    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.maxFramesInFlight; imageIndex++)
     {
         if (backendContext.imageAvailableSemaphores[imageIndex])
         {
@@ -377,7 +377,7 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
         return 0;
     }
 
-    vulkan_command_buffer *cmdbuf = backendContext.graphicsCommandBuffers + backendContext.currentFrame;
+    vulkan_command_buffer *cmdbuf = backendContext.graphicsCommandBuffers + backendContext.imageIndex;
     VulkanCommandBufferReset(cmdbuf);
     VulkanCommandBufferBegin(cmdbuf, 0, 0, 0);
 
@@ -434,7 +434,7 @@ RendererBackendEndFrame(f32 deltaTime, renderer_backend *backend)
             backendContext.inFlightFences + backendContext.imageIndex;
 
     // Reset fence so it can be used in next frame
-    VulkanFenceReset(&backendContext, backendContext.imagesInFlight[backendContext.imageIndex]);
+    VulkanFenceReset(&backendContext, backendContext.imagesInFlight[backendContext.currentFrame]);
 
     VkSubmitInfo submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
 

@@ -8,10 +8,14 @@
 // NOTE: permArena is needed to allocate memory for the swapchain's VkImages and VkImageViews, if this function is used
 // to recreate the swapchain, the memory for those images will be already allocated thus permArena can be null
 PXAPI inline void
-InternalVulkanCreateSwapchain(vulkan_context *context, u32 width, u32 height, vulkan_swapchain *outSwapchain, mem_arena *permArena = 0)
+InternalVulkanCreateSwapchain(
+    vulkan_context *context,
+    u32 width,
+    u32 height,
+    vulkan_swapchain *outSwapchain,
+    mem_arena *permArena = 0)
 {
     VkExtent2D swapchainExtent = { width, height };
-    outSwapchain->maxFramesInFlight = 2;
 
     // Choose swapchain format
     b8 formatFound = 0;
@@ -68,6 +72,10 @@ InternalVulkanCreateSwapchain(vulkan_context *context, u32 width, u32 height, vu
     {
         imageCount = context->device.swapchainSupportInfo.capabilities.minImageCount;
     }
+
+    // FIXME
+    outSwapchain->maxFramesInFlight = imageCount - 1;
+    /* outSwapchain->maxFramesInFlight = 2; */
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
     swapchainCreateInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
