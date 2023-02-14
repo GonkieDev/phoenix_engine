@@ -7,6 +7,11 @@
 #include <stdarg.h>
 #include <string.h>
 
+struct logger_system_state
+{
+    read_file_result readResult;
+};
+
 void
 ReportAssertionFailure(char *expression, char *message, char *file, i32 line)
 {

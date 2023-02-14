@@ -31,6 +31,20 @@ vim.api.nvim_create_user_command(
 
 create_vim_proj_command("<F9>", CompileTestbed)
 
+function PostBuild()
+    vim.cmd("wa")
+    vim.cmd("set makeprg=.\\post_build.bat")
+    vim.cmd("Make")
+end
+
+vim.api.nvim_create_user_command(
+    'PostBuild',
+    PostBuild,
+    {bang = true}
+)
+
+create_vim_proj_command("<F10>", PostBuild)
+
 function CompileAll()
     vim.cmd("wa")
     vim.cmd("set makeprg=.\\build_all.bat")
@@ -43,10 +57,4 @@ vim.api.nvim_create_user_command(
     {bang = true}
 )
 
-create_vim_proj_command("<F10>", CompileAll)
-
--- -- Compile shaders
--- vim.api.nvim_set_keymap("n", "<F6>", 
---     "<cmd>wa<cr><cmd>set makeprg=.\\compile_shaders.bat<cr><cmd>Make<cr>",
---     { noremap = true, silent = true });
-
+create_vim_proj_command("<F11>", CompileAll)

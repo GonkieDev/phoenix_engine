@@ -1,4 +1,3 @@
-#include "vulkan/vulkan_core.h"
 #include <renderer/vulkan_renderer_types.hpp>
 
 PXAPI b8
@@ -24,13 +23,22 @@ CreateShaderModule(
     shaderStages[stageIndex].createInfo = {};
     shaderStages[stageIndex].createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     shaderStages[stageIndex].createInfo.codeSize = readResult.contentSize;
-    shaderStages[stageIndex].createInfo.pCode = (u32*)readResult.content;
+    shaderStages[stageIndex].createInfo.pCode = (u32*)readResult.contents;
 
     VK_CHECK(vkCreateShaderModule(
         context->device.logicalDevice,
         &shaderStages[stageIndex].createInfo,
         context->allocator,
         &shaderStages[stageIndex].handle));
+
+    // Can free file memory now
+    PlatformFreeFileMemory(readResult.contents);
+
+    shaderStages[stageIndex].shaderStageCreateInfo = {};
+    shaderStages[stageIndex].shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStages[stageIndex].shaderStageCreateInfo.stage = shaderStageFlag;
+    shaderStages[stageIndex].shaderStageCreateInfo.module = shaderStages[stageIndex].handle;
+    shaderStages[stageIndex].shaderStageCreateInfo.pName = "main";
 
     return 1;
 }

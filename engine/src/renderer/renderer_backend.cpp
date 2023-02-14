@@ -10,9 +10,12 @@
 #include <renderer/vulkan_command_buffer.cpp>
 #include <renderer/vulkan_framebuffer.cpp>
 #include <renderer/vulkan_fence.cpp>
+#include <renderer/vulkan_pipeline.cpp>
 
+// Shaders
 #include <renderer/shaders/vulkan_shader_utils.cpp>
 #include <renderer/shaders/vulkan_shader_object.cpp>
+
 
 // NOTE: declare backendContext before cpp includes so that they can use it
 global_var vulkan_context backendContext;
@@ -223,6 +226,12 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
         backendContext.imagesInFlight[imageIndex] = 0;
     }
 
+    if (!VulkanShaderObjectCreate(&backendContext, &backendContext.objectShader))
+    {
+        PXERROR("Error loading built-in basic light shader.");
+        return 0;
+    }
+
     PXINFO("Vulkan renderer initialized sucessfully.");
     return 1;
 }
@@ -232,63 +241,68 @@ ShutdownRendererBackend(renderer_backend *backend)
 {
     PXDEBUG("Shutting down renderer backend.");
 
-    vkDeviceWaitIdle(backendContext.device.logicalDevice);
-
-    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.maxFramesInFlight; imageIndex++)
+    if (backendContext.device.logicalDevice != VK_NULL_HANDLE)
     {
-        if (backendContext.imageAvailableSemaphores[imageIndex])
-        {
-            vkDestroySemaphore(
-                backendContext.device.logicalDevice,
-                backendContext.imageAvailableSemaphores[imageIndex],
-                backendContext.allocator);
+        vkDeviceWaitIdle(backendContext.device.logicalDevice);
 
-            backendContext.imageAvailableSemaphores[imageIndex] = 0;
+        VulkanShaderObjectDestroy(&backendContext, &backendContext.objectShader);
+
+        for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.maxFramesInFlight; imageIndex++)
+        {
+            if (backendContext.imageAvailableSemaphores[imageIndex])
+            {
+                vkDestroySemaphore(
+                    backendContext.device.logicalDevice,
+                    backendContext.imageAvailableSemaphores[imageIndex],
+                    backendContext.allocator);
+
+                backendContext.imageAvailableSemaphores[imageIndex] = 0;
+            }
+
+            if (backendContext.queueCompleteSemaphores[imageIndex])
+            {
+                vkDestroySemaphore(
+                    backendContext.device.logicalDevice,
+                    backendContext.queueCompleteSemaphores[imageIndex],
+                    backendContext.allocator);
+
+                backendContext.queueCompleteSemaphores[imageIndex] = 0;
+            }
+
+            VulkanFenceDestroy(&backendContext, backendContext.inFlightFences + imageIndex);
+        }
+        backendContext.imagesInFlight = 0; // NOTE: no need to deallocate since it's allocated on arena
+        backendContext.inFlightFences = 0;
+        backendContext.queueCompleteSemaphores = 0;
+        backendContext.imageAvailableSemaphores = 0;
+
+        // Command buffers
+        for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
+        {
+            if (backendContext.graphicsCommandBuffers[imageIndex].handle)
+            {
+                VulkanCommandBufferFree(
+                    &backendContext,
+                    backendContext.device.graphicsCommandPool,
+                    backendContext.graphicsCommandBuffers + imageIndex);
+                backendContext.graphicsCommandBuffers[imageIndex].handle = 0;
+            }
+        }
+        backendContext.graphicsCommandBuffers = 0;
+
+        for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
+        {
+            VulkanFramebufferDestroy(&backendContext, backendContext.swapchain.framebuffers + imageIndex);
         }
 
-        if (backendContext.queueCompleteSemaphores[imageIndex])
-        {
-            vkDestroySemaphore(
-                backendContext.device.logicalDevice,
-                backendContext.queueCompleteSemaphores[imageIndex],
-                backendContext.allocator);
+        VulkanRenderPassDestroy(&backendContext, &backendContext.mainRenderpass);
 
-            backendContext.queueCompleteSemaphores[imageIndex] = 0;
-        }
+        VulkanSwapchainDestroy(&backendContext, &backendContext.swapchain);
 
-        VulkanFenceDestroy(&backendContext, backendContext.inFlightFences + imageIndex);
+        vkDestroySurfaceKHR(backendContext.instance, backendContext.surface, backendContext.allocator);
+
+        VulkanDestroyDevice(&backendContext);
     }
-    backendContext.imagesInFlight = 0; // NOTE: no need to deallocate since it's allocated on arena
-    backendContext.inFlightFences = 0;
-    backendContext.queueCompleteSemaphores = 0;
-    backendContext.imageAvailableSemaphores = 0;
-
-    // Command buffers
-    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
-    {
-        if (backendContext.graphicsCommandBuffers[imageIndex].handle)
-        {
-            VulkanCommandBufferFree(
-                &backendContext,
-                backendContext.device.graphicsCommandPool,
-                backendContext.graphicsCommandBuffers + imageIndex);
-            backendContext.graphicsCommandBuffers[imageIndex].handle = 0;
-        }
-    }
-    backendContext.graphicsCommandBuffers = 0;
-
-    for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
-    {
-        VulkanFramebufferDestroy(&backendContext, backendContext.swapchain.framebuffers + imageIndex);
-    }
-
-    VulkanRenderPassDestroy(&backendContext, &backendContext.mainRenderpass);
-
-    VulkanSwapchainDestroy(&backendContext, &backendContext.swapchain);
-
-    vkDestroySurfaceKHR(backendContext.instance, backendContext.surface, backendContext.allocator);
-
-    VulkanDestroyDevice(&backendContext);
 
 #if defined(_DEBUG)
     if (backendContext.debugMessenger)

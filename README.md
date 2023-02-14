@@ -1,5 +1,5 @@
 # Phoenix Engine
-![logo](https://github.com/GonkieDev/phoenix_engine/blob/main/phoenixlogo.jpg)
+![Phoenix Engine Logo](https://github.com/GonkieDev/phoenix_engine/blob/main/phoenixlogo.jpg)
 
 Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulkan. It also provides platform independent input.
 
@@ -39,9 +39,14 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 
 ### Filesystem:
 - Use `mem_arena` for file buffer allocation?
+- Platform agnostic file handle
+
+### Logging:
+- Log file
 
 ### Low priority TODOs:
 - Get rid of VLAs that were used, not many but still
+- Get rid of `PXAPI` (or at least change its name)
 
 ## Dependencies
 - `stdb_image.h`

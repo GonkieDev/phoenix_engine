@@ -181,6 +181,8 @@ struct vulkan_context
     struct mem_arena *permArena;
     struct mem_arena *tempArena;
 
+    vulkan_shader_object objectShader;
+
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT    debugMessenger;
 #endif

@@ -27,12 +27,20 @@ VulkanShaderObjectCreate(vulkan_context *context, vulkan_shader_object *outShade
         }
     }
 
+    // Descriptors TODO
+
     return 1;
 }
 
 PXAPI b8
 VulkanShaderObjectDestroy(vulkan_context *context, vulkan_shader_object *shader)
 {
+    for (u32 i = 0; i < SHADER_OBJECT_STAGE_COUNT; i++)
+    {
+        vkDestroyShaderModule(context->device.logicalDevice, shader->stages[i].handle, context->allocator);
+        shader->stages[i].handle = 0;
+    }
+
     return 1;
 }
 
