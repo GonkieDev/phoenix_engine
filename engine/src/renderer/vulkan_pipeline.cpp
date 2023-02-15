@@ -1,5 +1,6 @@
 #include <core/engine.hpp>
 #include <renderer/vulkan_renderer_types.hpp>
+#include <renderer/graphics_math_types.hpp>
 
 struct vulkan_graphics_pipeline_create_params
 {
@@ -103,6 +104,10 @@ VulkanGraphicsPipelineCreate(
     bindingDescription.stride = sizeof(vertex_3d_P);
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // Move to next data entry for each vertex
 
+    // Vertex attributes
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 
     return 1;
 }
