@@ -106,20 +106,94 @@ VulkanGraphicsPipelineCreate(
 
     // Vertex attributes
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.vertexAttributeDescriptionCount = params->attributeCount;
+    vertexInputInfo.pVertexAttributeDescriptions = params->attributes;
 
-    return 1;
+    // Input assembly
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
+    pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+
+    // Descriptor set layouts
+    pipelineLayoutCreateInfo.setLayoutCount = params->descriptorSetLayoutCount;
+    pipelineLayoutCreateInfo.pSetLayouts = params->descriptorSetLayouts;
+
+    VK_CHECK(vkCreatePipelineLayout(
+        context->device.logicalDevice,
+        &pipelineLayoutCreateInfo,
+        context->allocator,
+        &outPipeline->pipelineLayout));
+
+    VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
+    pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineCreateInfo.stageCount = params->stageCount;
+    pipelineCreateInfo.pStages = params->stages;
+    pipelineCreateInfo.pVertexInputState = &vertexInputInfo;
+    pipelineCreateInfo.pInputAssemblyState = &inputAssembly;
+
+    pipelineCreateInfo.pViewportState = &viewportState;
+    pipelineCreateInfo.pRasterizationState = &rasterizerCreateInfo;
+    pipelineCreateInfo.pMultisampleState = &multisampleCreateInfo;
+    pipelineCreateInfo.pDepthStencilState = &depthStencil;
+    pipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
+    pipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
+    pipelineCreateInfo.pTessellationState = 0;
+
+    pipelineCreateInfo.layout = outPipeline->pipelineLayout;
+
+    pipelineCreateInfo.renderPass = params->renderpass->handle;
+    pipelineCreateInfo.subpass = 0;
+    pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineCreateInfo.basePipelineIndex = -1;
+
+    VkResult result = vkCreateGraphicsPipelines(
+        context->device.logicalDevice,
+        VK_NULL_HANDLE,
+        1,
+        &pipelineCreateInfo,
+        context->allocator,
+        &outPipeline->handle);
+
+    if (VulkanResultIsSuccess(result))
+    {
+        PXDEBUG("Graphics pipeline created!");
+        return 1;
+    }
+
+    PXERROR("vkCreateGraphicsPipelines failed.");
+
+    return 0;
 }
 
 PXAPI void
 VulkanGraphicsPipelineDestroy(vulkan_context *context, vulkan_pipeline *pipeline)
 {
+    if (pipeline)
+    {
+        if (pipeline->handle)
+        {
+            vkDestroyPipeline(context->device.logicalDevice, pipeline->handle, context->allocator);
+            pipeline->handle = 0;
+        }
 
+        if (pipeline->pipelineLayout)
+        {
+            vkDestroyPipelineLayout(context->device.logicalDevice, pipeline->pipelineLayout, context->allocator);
+            pipeline->pipelineLayout = 0;
+        }
+    }
 }
 
-PXAPI void
-VulkanPipelineBind(vulkan_command_buffer *cmdbuf, VkPipelineBindPoint bindPoint, vulkan_pipeline *pipeline)
-{
-
-}
+// NOTE: do we need this?
+/* PXAPI void */
+/* VulkanPipelineBind(vulkan_command_buffer *cmdbuf, VkPipelineBindPoint bindPoint, vulkan_pipeline *pipeline) */
+/* { */
+/*     vkCmdBindPipeline(cmdbuf->handle, bindPoint, pipeline->handle); */
+/* } */
