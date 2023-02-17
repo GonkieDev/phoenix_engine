@@ -11,6 +11,7 @@
 #include <renderer/vulkan_framebuffer.cpp>
 #include <renderer/vulkan_fence.cpp>
 #include <renderer/vulkan_pipeline.cpp>
+#include <renderer/vulkan_buffer.cpp>
 
 // Shaders
 #include <renderer/shaders/vulkan_shader_utils.cpp>
@@ -40,6 +41,9 @@ BackendRegenerateBuffers(
 
 PXAPI b8
 SwapchainRecreate(renderer_backend *backend);
+
+PXAPI void
+BackendCreateBuffers(vulkan_context *context);
 
 // TODO: get rid of allocations in these functions that can be used with variable lengths stack arrays
 PXAPI b8
@@ -231,6 +235,8 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
         PXERROR("Error loading built-in basic light shader.");
         return 0;
     }
+
+    BackendCreateBuffers(&backendContext);
 
     PXINFO("Vulkan renderer initialized sucessfully.");
     return 1;
@@ -661,4 +667,10 @@ SwapchainRecreate(renderer_backend *backend)
     backendContext.recreatingSwapchain = 0;
 
     return 1;
+}
+
+PXAPI void
+BackendCreateBuffers(vulkan_context *context)
+{
+
 }

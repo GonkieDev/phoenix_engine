@@ -11,6 +11,17 @@
 
 // TODO: xxmemoryxx change most of these u32's to be u16's
 
+struct vulkan_buffer
+{
+    u64 totalSize;
+    VkBuffer handle;
+    VkBufferUsageFlagBits usage;
+    b8 isLocked;
+    VkDeviceMemory memory;
+    i32 memoryIndex;
+    u32 memoryPropertyFlags;
+};
+
 struct vulkan_swapchain_support_info
 {
     VkSurfaceCapabilitiesKHR capabilities;
