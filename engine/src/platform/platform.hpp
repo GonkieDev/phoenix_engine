@@ -16,6 +16,7 @@ PXAPI f64 PlatformGetAbsoluteTime(struct platform_state *platform_state);
 
 PXAPI void *PlatformAllocateMemory(u64 size, b8 aligned);
 PXAPI void PlatformFreeMemory(void *memory, b8 aligned);
+PXAPI void PlatformCopyMemory(void *dest, void *src, u32 sizeInBytes);
 
 PXAPI void PlatformSleep(f64 secondsToSleep);
 

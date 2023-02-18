@@ -193,6 +193,12 @@ PlatformFreeMemory(void *memory, b8 aligned)
     }
 }
 
+PXAPI void
+PlatformCopyMemory(void *dest, void *src, u32 sizeInBytes)
+{
+    CopyMemory(dest, src, sizeInBytes);
+}
+
 PXAPI f64
 PlatformGetAbsoluteTime(platform_state *platformState)
 {

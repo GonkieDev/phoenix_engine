@@ -238,5 +238,7 @@ VulkanBufferLoadData(
 {
     void *dataPtr;
     VK_CHECK(vkMapMemory(context->device.logicalDevice, buffer->memory, offset, size, flags, &dataPtr));
+    // memcopy
+    vkUnmapMemory(context->device.logicalDevice, buffer->memory);
 }
 
