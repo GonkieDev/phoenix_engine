@@ -267,16 +267,16 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
     }
 
     // temporary test code
-    const u32 vertCount = 3;
+    const u32 vertCount = 4;
     vertex_3d_P verts[vertCount] = {};
 
-    verts[0].p = {{ 0.0f, -0.5f, 0.f }};
-    verts[1].p = {{ 0.5f,  0.5f, 0.f }};
-    verts[2].p = {{ 0.0f,  0.5f, 0.f }};
+    verts[0].p = {{ -0.5f,  0.5f, 0.f }};
+    verts[1].p = {{  0.5f, -0.5f, 0.f }};
+    verts[2].p = {{ -0.5f, -0.5f, 0.f }};
+    verts[3].p = {{  0.5f,  0.5f, 0.f }};
 
-    const u32 indexCount = 3;
-    /* u32 indices[indexCount] = { 0, 1, 2 }; */
-    u32 indices[indexCount] = { 2, 1, 0 };
+    const u32 indexCount = 6;
+    u32 indices[indexCount] = { 0, 1, 2, 0, 3, 1 };
 
     static_assert(sizeof(verts) > 1, "");
 
@@ -505,7 +505,7 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
 
     vkCmdBindIndexBuffer(cmdbuf->handle, backendContext.objectIndexBuf.handle, 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdDrawIndexed(cmdbuf->handle, 3, 1, 0, 0, 0);
+    vkCmdDrawIndexed(cmdbuf->handle, 6, 1, 0, 0, 0);
     // end of temporary code
 
     return 1;
