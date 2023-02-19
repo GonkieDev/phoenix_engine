@@ -47,6 +47,7 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 ### Low priority TODOs:
 - Get rid of VLAs that were used, not many but still
 - Get rid of `PXAPI` (or at least change its name)
+- Add guards to cpp files
 
 ## Dependencies
 - `stdb_image.h`

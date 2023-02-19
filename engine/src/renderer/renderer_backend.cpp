@@ -42,7 +42,7 @@ BackendRegenerateBuffers(
 PXAPI b8
 SwapchainRecreate(renderer_backend *backend);
 
-PXAPI void
+PXAPI b8
 BackendCreateBuffers(vulkan_context *context);
 
 // TODO: get rid of allocations in these functions that can be used with variable lengths stack arrays
@@ -236,7 +236,11 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
         return 0;
     }
 
-    BackendCreateBuffers(&backendContext);
+    if (!BackendCreateBuffers(&backendContext))
+    {
+        PXERROR("Error creating backend buffers!");
+        return 0;
+    }
 
     PXINFO("Vulkan renderer initialized sucessfully.");
     return 1;
@@ -250,6 +254,9 @@ ShutdownRendererBackend(renderer_backend *backend)
     if (backendContext.device.logicalDevice != VK_NULL_HANDLE)
     {
         vkDeviceWaitIdle(backendContext.device.logicalDevice);
+
+        VulkanBufferDestroy(&backendContext, &backendContext.objectIndexBuf);
+        VulkanBufferDestroy(&backendContext, &backendContext.objectVertexBuf);
 
         VulkanShaderObjectDestroy(&backendContext, &backendContext.objectShader);
 
@@ -669,8 +676,43 @@ SwapchainRecreate(renderer_backend *backend)
     return 1;
 }
 
-PXAPI void
+PXAPI b8
 BackendCreateBuffers(vulkan_context *context)
 {
+    VkMemoryPropertyFlagBits memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    VkBufferUsageFlagBits usageFlagBits = (VkBufferUsageFlagBits)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
+    const u64 vertexBufferSize = sizeof(vertex_3d_P) * 1024 * 1024;
+
+    if (!VulkanBufferCreate(
+        context,
+        vertexBufferSize,
+        usageFlagBits, 
+        memoryPropertyFlags,
+        1,
+        &context->objectVertexBuf))
+    {
+        PXERROR("Error creating builtin object vertex buffer");
+        return 0;
+    }
+    context->geometryVertexOffset = 0;
+
+    const u64 indexBufferSize = sizeof(u32) * 1024 * 1024;
+
+    if (!VulkanBufferCreate(
+        context,
+        indexBufferSize,
+        usageFlagBits, 
+        memoryPropertyFlags,
+        1,
+        &context->objectIndexBuf))
+    {
+        PXERROR("Error creating builtin object index buffer");
+        return 0;
+    }
+    context->geometryIndexOffset = 0;
+
+    return 1;
 }

@@ -192,7 +192,12 @@ struct vulkan_context
     struct mem_arena *permArena;
     struct mem_arena *tempArena;
 
+    // PHOENIX.Object
+    vulkan_buffer objectVertexBuf;
+    vulkan_buffer objectIndexBuf;
     vulkan_shader_object objectShader;
+    u64 geometryVertexOffset;
+    u64 geometryIndexOffset;
 
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT    debugMessenger;

@@ -6,8 +6,8 @@ VulkanBufferCreate(
     u64 size,
     VkBufferUsageFlagBits usage,
     u32 memoryPropertyFlags,
-    vulkan_buffer *outBuffer,
-    b8 bindOnCreate = 0);
+    b8 bindOnCreate,
+    vulkan_buffer *outBuffer);
 
 PXAPI void
 VulkanBufferDestroy(vulkan_context *context, vulkan_buffer *buffer);
@@ -63,8 +63,8 @@ VulkanBufferCreate(
     u64 size,
     VkBufferUsageFlagBits usage,
     u32 memoryPropertyFlags,
-    vulkan_buffer *outBuffer,
-    b8 bindOnCreate)
+    b8 bindOnCreate,
+    vulkan_buffer *outBuffer)
 {
     *outBuffer = {};
     outBuffer->totalSize = size;
@@ -136,7 +136,7 @@ VulkanBufferDestroy(vulkan_context *context, vulkan_buffer *buffer)
     }
 
     buffer->totalSize = 0;
-    buffer->usage = 0;
+    /* buffer->usage = 0; */
     buffer->isLocked = 0;
 }
 
@@ -158,7 +158,7 @@ VulkanBufferResize(
         context->device.logicalDevice,
         &bufferCreateInfo,
         context->allocator,
-        newBuffer));
+        &newBuffer));
 
     VkMemoryRequirements requirements;
     vkGetBufferMemoryRequirements(context->device.logicalDevice, newBuffer, &requirements);
@@ -234,11 +234,41 @@ VulkanBufferLoadData(
     u64 offset,
     u64 size,
     u32 flags,
-    void *data)
+    void *srcPtr)
 {
-    void *dataPtr;
-    VK_CHECK(vkMapMemory(context->device.logicalDevice, buffer->memory, offset, size, flags, &dataPtr));
-    // memcopy
+    void *destPtr;
+    VK_CHECK(vkMapMemory(context->device.logicalDevice, buffer->memory, offset, size, flags, &destPtr));
+    PlatformCopyMemory(destPtr, srcPtr, size);
     vkUnmapMemory(context->device.logicalDevice, buffer->memory);
+}
+
+PXAPI void
+VulkanBufferCopyTo(
+    vulkan_context *context,
+    VkCommandPool pool,
+    VkFence fence,
+    VkQueue queue,
+    VkBuffer source,
+    u64 sourceOffset,
+    VkBuffer dest,
+    u64 destOffset,
+    u64 size)
+{
+    vkQueueWaitIdle(queue);
+
+    // Create one-time command buffer
+    vulkan_command_buffer tempCmdBuf;
+    VulkanCommandBufferAllocateAndBeginSingleUse(context, pool, &tempCmdBuf);
+
+    // Prepare the copy command and add it to the command buffer
+    VkBufferCopy copyRegion;
+    copyRegion.srcOffset = sourceOffset;
+    copyRegion.dstOffset = destOffset;
+    copyRegion.size = size;
+
+    vkCmdCopyBuffer(tempCmdBuf.handle, source, dest, 1, &copyRegion);
+
+    // Submit the buffer for execution and wait for it to complete
+    VulkanCommandBufferEndSingleUse(context, pool, &tempCmdBuf, queue);
 }
 
