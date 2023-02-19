@@ -45,6 +45,30 @@ SwapchainRecreate(renderer_backend *backend);
 PXAPI b8
 BackendCreateBuffers(vulkan_context *context);
 
+
+PXAPI void
+UploadDataRange(
+    vulkan_context *context,
+    VkCommandPool pool,
+    VkFence fence,
+    VkQueue queue,
+    vulkan_buffer *buffer,
+    u64 offset,
+    u64 size,
+    void *data)
+{
+    VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vulkan_buffer staging;
+    VulkanBufferCreate(context, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, flags, 1, &staging);
+
+    VulkanBufferLoadData(context, &staging, 0, size, 0, data);
+
+    VulkanBufferCopyTo(context, pool, fence, queue, staging.handle, 0, buffer->handle, offset, size);
+
+    VulkanBufferDestroy(context, &staging);
+}
+
 // TODO: get rid of allocations in these functions that can be used with variable lengths stack arrays
 PXAPI b8
 InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engineState)
@@ -242,6 +266,42 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
         return 0;
     }
 
+    // temporary test code
+    const u32 vertCount = 3;
+    vertex_3d_P verts[vertCount] = {};
+
+    verts[0].p = {{ 0.0f, -0.5f, 0.f }};
+    verts[1].p = {{ 0.5f,  0.5f, 0.f }};
+    verts[2].p = {{ 0.0f,  0.5f, 0.f }};
+
+    const u32 indexCount = 3;
+    /* u32 indices[indexCount] = { 0, 1, 2 }; */
+    u32 indices[indexCount] = { 2, 1, 0 };
+
+    static_assert(sizeof(verts) > 1, "");
+
+    UploadDataRange(
+        &backendContext,
+        backendContext.device.graphicsCommandPool,
+        0,
+        backendContext.device.graphicsQueue,
+        &backendContext.objectVertexBuf,
+        0,
+        sizeof(verts),
+        verts);
+
+    UploadDataRange(
+        &backendContext,
+        backendContext.device.graphicsCommandPool,
+        0,
+        backendContext.device.graphicsQueue,
+        &backendContext.objectIndexBuf,
+        0,
+        sizeof(indices),
+        indices);
+
+    // end of temporary code
+
     PXINFO("Vulkan renderer initialized sucessfully.");
     return 1;
 }
@@ -435,6 +495,18 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
         cmdbuf,
         &backendContext.mainRenderpass,
         backendContext.swapchain.framebuffers[backendContext.imageIndex].handle);
+
+    // temporary code
+    VulkanShaderObjectUse(&backendContext, &backendContext.objectShader);
+
+    // Bind vertex buffer at offset
+    VkDeviceSize offsets[1] = {};
+    vkCmdBindVertexBuffers(cmdbuf->handle, 0, 1, &backendContext.objectVertexBuf.handle, offsets);
+
+    vkCmdBindIndexBuffer(cmdbuf->handle, backendContext.objectIndexBuf.handle, 0, VK_INDEX_TYPE_UINT32);
+
+    vkCmdDrawIndexed(cmdbuf->handle, 3, 1, 0, 0, 0);
+    // end of temporary code
 
     return 1;
 }
@@ -680,16 +752,14 @@ PXAPI b8
 BackendCreateBuffers(vulkan_context *context)
 {
     VkMemoryPropertyFlagBits memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    VkBufferUsageFlagBits usageFlagBits = (VkBufferUsageFlagBits)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     const u64 vertexBufferSize = sizeof(vertex_3d_P) * 1024 * 1024;
 
     if (!VulkanBufferCreate(
         context,
         vertexBufferSize,
-        usageFlagBits, 
+        (VkBufferUsageFlagBits)(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT), 
         memoryPropertyFlags,
         1,
         &context->objectVertexBuf))
@@ -704,7 +774,8 @@ BackendCreateBuffers(vulkan_context *context)
     if (!VulkanBufferCreate(
         context,
         indexBufferSize,
-        usageFlagBits, 
+        (VkBufferUsageFlagBits)(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT), 
         memoryPropertyFlags,
         1,
         &context->objectIndexBuf))

@@ -191,9 +191,8 @@ VulkanGraphicsPipelineDestroy(vulkan_context *context, vulkan_pipeline *pipeline
     }
 }
 
-// NOTE: do we need this?
-/* PXAPI void */
-/* VulkanPipelineBind(vulkan_command_buffer *cmdbuf, VkPipelineBindPoint bindPoint, vulkan_pipeline *pipeline) */
-/* { */
-/*     vkCmdBindPipeline(cmdbuf->handle, bindPoint, pipeline->handle); */
-/* } */
+PXAPI void
+VulkanPipelineBind(vulkan_command_buffer *cmdbuf, VkPipelineBindPoint bindPoint, vulkan_pipeline *pipeline)
+{
+    vkCmdBindPipeline(cmdbuf->handle, bindPoint, pipeline->handle);
+}

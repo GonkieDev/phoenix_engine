@@ -37,7 +37,7 @@ VulkanBufferLoadData(
     u64 offset,
     u64 size,
     u32 flags,
-    void *data);
+    void *srcPtr);
 
 PXAPI void
 VulkanBufferCopyTo(
@@ -75,7 +75,7 @@ VulkanBufferCreate(
     bufferCreateInfo.size = size;
     bufferCreateInfo.usage = usage;
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
+    
     VK_CHECK(vkCreateBuffer(
         context->device.logicalDevice,
         &bufferCreateInfo,
@@ -85,7 +85,8 @@ VulkanBufferCreate(
     // Gather memory requirements
     VkMemoryRequirements requirements;
     vkGetBufferMemoryRequirements(context->device.logicalDevice, outBuffer->handle, &requirements);
-    FindMemoryIndex(context, requirements.memoryTypeBits, outBuffer->memoryPropertyFlags);
+    outBuffer->memoryIndex =
+        FindMemoryIndex(context, requirements.memoryTypeBits, outBuffer->memoryPropertyFlags);
 
     if (outBuffer->memoryIndex == -1)
     {

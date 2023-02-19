@@ -116,5 +116,9 @@ VulkanShaderObjectDestroy(vulkan_context *context, vulkan_shader_object *shader)
 PXAPI void
 VulkanShaderObjectUse(vulkan_context *context, vulkan_shader_object *shader)
 {
-
+    u32 imageIndex = context->imageIndex;
+    VulkanPipelineBind(
+        context->graphicsCommandBuffers + imageIndex,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        &shader->pipeline);
 }
