@@ -25,8 +25,10 @@ struct vulkan_buffer
 struct vulkan_swapchain_support_info
 {
     VkSurfaceCapabilitiesKHR capabilities;
+
     u32 formatsCount;
     VkSurfaceFormatKHR *formats;
+
     u32 presentModesCount;
     VkPresentModeKHR *presentModes;
 };
@@ -189,8 +191,9 @@ struct vulkan_context
     vulkan_fence *inFlightFences;
     vulkan_fence **imagesInFlight; // NOTE: these fences are not allocated by this list
 
-    struct mem_arena *permArena;
-    struct mem_arena *tempArena;
+    // Pointers to arenas in the engineState
+    struct mem_arena *permArena; // NOTE: allocate stuff here that you DO NOT care about
+    struct mem_arena *tempArena; // NOTE: allocate stuff here that you care about
 
     // PHOENIX.Object
     vulkan_buffer objectVertexBuf;

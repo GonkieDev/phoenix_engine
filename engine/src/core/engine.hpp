@@ -24,7 +24,7 @@ struct engine_state
     b8 isRunning;
     b8 isSuspended;
 
-    // Settings
+    // Settings - TODO: do we want to keep these here?
     u16 width;
     u16 height;
     u16 targetRefreshRate;

@@ -1,4 +1,7 @@
-/* #include "vulkan/vulkan_core.h" */
+// TOP
+#if !defined(VULKAN_DEVICE_CPP)
+#define VULKAN_DEVICE_CPP
+
 #include <core/engine.hpp>
 
 struct vulkan_physical_device_requirements
@@ -181,7 +184,7 @@ VulkanDeviceQuerySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface,
                 PXMemoryArenaAlloc(permArena, sizeof(VkSurfaceFormatKHR) * outSupportInfo->formatsCount);
         }
         VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &outSupportInfo->formatsCount,
-                    outSupportInfo->formats));
+            outSupportInfo->formats));
     }
 
     VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &outSupportInfo->presentModesCount, 0));
@@ -193,7 +196,7 @@ VulkanDeviceQuerySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface,
                 PXMemoryArenaAlloc(permArena, sizeof(VkPresentModeKHR) * outSupportInfo->presentModesCount);
         }
         VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &outSupportInfo->formatsCount,
-                    outSupportInfo->formats));
+            outSupportInfo->formats));
     }
 }
 
@@ -225,8 +228,6 @@ PhysicalDeviceMeetsRequirements(
 
     u32 queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, 0);
-    /* VkQueueFamilyProperties *queueFamilies = (VkQueueFamilyProperties *) */
-    /*     PXMemoryArenaAlloc(tempArena, sizeof(VkQueueFamilyProperties) * queueFamilyCount); */
     VkQueueFamilyProperties queueFamilies[32];
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies);
 
@@ -263,7 +264,7 @@ PhysicalDeviceMeetsRequirements(
 
         VkBool32 supportsPresent = VK_FALSE;
         VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &supportsPresent));
-        if (supportsPresent)
+        if (supportsPresent == VK_TRUE)
         {
             outQueueFamilyInfo->presentFamilyIndex =  i;
         }
@@ -286,8 +287,10 @@ PhysicalDeviceMeetsRequirements(
     {
         PXINFO("Device meets queue requirements.");
 
-        // TODO: check if we need the outswapchain support later on, if so don't pass it the frame arena
-        VulkanDeviceQuerySwapchainSupport(device, surface, permArena, outSwapchainSupport);
+        // NOTE: allocate using temp arena as this GPU won't necessarily be accepted
+        // and we might not want to keep the memory, copy to perm arena after device
+        // has been chosen
+        VulkanDeviceQuerySwapchainSupport(device, surface, tempArena, outSwapchainSupport);
 
         if (outSwapchainSupport->formatsCount < 1 || outSwapchainSupport->presentModesCount < 1)
         {
@@ -337,11 +340,35 @@ PhysicalDeviceMeetsRequirements(
             return 0;
         }
 
-        // All requirements have been met
+        // NOTE: All requirements have been met
+
+        {
+            // Copy outSwapchainSupport allocated stuff from temp arena to perm arena since we want to keep it
+
+            VkSurfaceFormatKHR *tempFormats = outSwapchainSupport->formats;
+            outSwapchainSupport->formats = (VkSurfaceFormatKHR *)
+                PXMemoryArenaAlloc(permArena, sizeof(VkSurfaceFormatKHR ) * outSwapchainSupport->formatsCount);
+            for (u32 formatIndex = 0; formatIndex < outSwapchainSupport->formatsCount; formatIndex++)
+            {
+                outSwapchainSupport->formats[formatIndex] = tempFormats[formatIndex];
+            }
+
+            VkPresentModeKHR *tempPresentModes = outSwapchainSupport->presentModes;
+            outSwapchainSupport->presentModes = (VkPresentModeKHR *)
+                PXMemoryArenaAlloc(permArena, sizeof(VkPresentModeKHR) * outSwapchainSupport->presentModesCount);
+            for (u32 presentModeIndex = 0;
+                 presentModeIndex < outSwapchainSupport->presentModesCount;
+                 presentModeIndex++)
+            {
+                outSwapchainSupport->presentModes[presentModeIndex] = tempPresentModes[presentModeIndex];
+            }
+        }
+
         return 1;
 
     } // if device meets requirements
 
+    // Requirements have not been met so resturn 0
     return 0;
 }
 
@@ -357,8 +384,6 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
         return 0;
     }
 
-    /* VkPhysicalDevice *physicalDevices = (VkPhysicalDevice *) */
-    /*     PXMemoryArenaAlloc(tempArena, sizeof(VkPhysicalDevice) * physicalDeviceCount); */
     VkPhysicalDevice physicalDevices[32];
     VK_CHECK(vkEnumeratePhysicalDevices(context->instance, &physicalDeviceCount, physicalDevices));
 
@@ -373,6 +398,10 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
         VkPhysicalDeviceMemoryProperties memoryProperties;
         vkGetPhysicalDeviceMemoryProperties(physicalDevices[i], &memoryProperties);
 
+        char *deviceExtensionNames[] = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        };
+
         vulkan_physical_device_requirements requirements = {};
         requirements.graphics           = 1;
         requirements.present            = 1;
@@ -380,17 +409,12 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
         requirements.transfer           = 1;
         requirements.samplerAnisotropy  = 1;
         requirements.discreteGPU        = 1;
-
-        char *deviceExtensionNames[] = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        };
-
-        requirements.deviceExtensionNames = deviceExtensionNames;
+        requirements.deviceExtensionNames      = deviceExtensionNames;
         requirements.deviceExtensionNamesCount = ArrayLen(deviceExtensionNames);
 
         vulkan_physical_device_queue_family_info queueInfo = {};
 
-        b8 result = PhysicalDeviceMeetsRequirements(
+        b8 meetsRequirements = PhysicalDeviceMeetsRequirements(
             physicalDevices[i],
             context->surface,
             &properties,
@@ -401,7 +425,7 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
             &queueInfo,
             &context->device.swapchainSupportInfo);
 
-        if (result)
+        if (meetsRequirements)
         {
             PXINFO("Selected GPU: '%s'.", properties.deviceName);
 
@@ -448,8 +472,8 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
             context->device.memoryProperties = memoryProperties;
 
             break;
-        } // !if (result)
-    }
+        } // !if (meetsRequirements)
+    } // for (u32 i = 0; i < physicalDeviceCount; i++)
 
     if (!context->device.physicalDevice)
     {
@@ -495,3 +519,6 @@ VulkanDeviceDetectDepthFormat(vulkan_device *device)
 
     return 0;
 }
+
+#endif // #if !defined(VULKAN_DEVICE_CPP)
+// BOTTOM

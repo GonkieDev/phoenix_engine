@@ -18,7 +18,6 @@
 #include <renderer/shaders/vulkan_shader_object.cpp>
 
 
-// NOTE: declare backendContext before cpp includes so that they can use it
 global_var vulkan_context backendContext;
 global_var u32 cachedFramebufferWidth;
 global_var u32 cachedFramebufferHeight;
@@ -79,10 +78,6 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
     // TODO: custom allocator
     backendContext.allocator = 0;
 
-    backendContext.framebufferWidth = (cachedFramebufferWidth == 0 ) ? 800 : engineState->width;
-    backendContext.framebufferHeight = (cachedFramebufferHeight == 0 ) ? 800 : engineState->height;
-
-
     // TODO: change this to cached stuff
     backendContext.framebufferWidth = engineState->width;
     backendContext.framebufferHeight = engineState->height;
@@ -124,7 +119,7 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
     }
 #endif
 
-    // Validations layers TODO
+    // Validations layers
 #ifndef _DEBUG
     char *requiredValidationLayers[] = {};
 #else
@@ -268,12 +263,17 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
 
     // temporary test code
     const u32 vertCount = 4;
-    vertex_3d_P verts[vertCount] = {};
+    vertex_3d_PC verts[vertCount] = {};
 
     verts[0].p = {{ -0.5f,  0.5f, 0.f }};
     verts[1].p = {{  0.5f, -0.5f, 0.f }};
     verts[2].p = {{ -0.5f, -0.5f, 0.f }};
     verts[3].p = {{  0.5f,  0.5f, 0.f }};
+
+    verts[0].c = {{ 0.0f, 0.0f, 1.0f, 1.0f }};
+    verts[1].c = {{ 0.0f, 0.0f, 1.0f, 1.0f }};
+    verts[2].c = {{ 0.0f, 0.0f, 1.0f, 1.0f }};
+    verts[3].c = {{ 0.0f, 0.0f, 1.0f, 1.0f }};
 
     const u32 indexCount = 6;
     u32 indices[indexCount] = { 0, 1, 2, 0, 3, 1 };
@@ -753,7 +753,7 @@ BackendCreateBuffers(vulkan_context *context)
 {
     VkMemoryPropertyFlagBits memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-    const u64 vertexBufferSize = sizeof(vertex_3d_P) * 1024 * 1024;
+    const u64 vertexBufferSize = sizeof(vertex_3d_PC) * 1024 * 1024;
 
     if (!VulkanBufferCreate(
         context,

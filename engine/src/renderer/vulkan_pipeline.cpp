@@ -101,7 +101,7 @@ VulkanGraphicsPipelineCreate(
     // Vertex Input
     VkVertexInputBindingDescription bindingDescription{};
     bindingDescription.binding = 0; // Binding index
-    bindingDescription.stride = sizeof(vertex_3d_P);
+    bindingDescription.stride = sizeof(vertex_3d_PC);
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // Move to next data entry for each vertex
 
     // Vertex attributes

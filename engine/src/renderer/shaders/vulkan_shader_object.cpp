@@ -46,16 +46,18 @@ VulkanShaderObjectCreate(vulkan_context *context, vulkan_shader_object *outShade
 
     // Attributes
     u32 offset = 0;
-    const i32 attributeCount = 1;
+    const i32 attributeCount = 2;
     VkVertexInputAttributeDescription attributeDescriptions[attributeCount];
 
     // Position
     VkFormat formats[attributeCount] = {
-        VK_FORMAT_R32G32B32_SFLOAT
+        VK_FORMAT_R32G32B32_SFLOAT,
+        VK_FORMAT_R32G32B32A32_SFLOAT,
     };
 
     u64 sizes[attributeCount] = {
-        sizeof(v3)
+        sizeof(v3),
+        sizeof(v4)
     };
 
     for (u32 i = 0; i < attributeCount; i++)
@@ -89,7 +91,6 @@ VulkanShaderObjectCreate(vulkan_context *context, vulkan_shader_object *outShade
     createPipelineParams.viewport = viewport;
     createPipelineParams.scissor = scissor;
     createPipelineParams.isWireframe = 0;
-
     if(!VulkanGraphicsPipelineCreate( context, &createPipelineParams, &outShader->pipeline))
     {
         PXERROR("Failed to load graphics pipeline for PHOENIX.ObjectShader.");
