@@ -2,13 +2,18 @@
 
 #include <renderer/vulkan_renderer_types.hpp>
 
+/*
+ * @rgba: Clear color
+ * @depth: Depth clear value
+ * @stencil: Stencil clear value
+ */
 PXAPI void
 VulkanRenderpassCreate(
     vulkan_context *context,
     f32 x, f32 y, f32 w, f32 h,
     f32 r, f32 g, f32 b, f32 a, // Clear color
-    f32 depth,
-    u32 stencil,
+    f32 depth,   // depth clear value
+    u32 stencil, // stencil clear value
     vulkan_renderpass *outRenderpass)
 {
     outRenderpass->x = x;

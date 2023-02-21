@@ -50,7 +50,6 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 - Add guards to cpp files
 
 ## Dependencies
-- `stdb_image.h`
 
 ## Flags
 - `_DEBUG` to activate debug

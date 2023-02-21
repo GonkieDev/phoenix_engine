@@ -468,7 +468,7 @@ RendererBackendBeginFrame(f32 deltaTime, renderer_backend *backend)
     }
 
     vulkan_command_buffer *cmdbuf = backendContext.graphicsCommandBuffers + backendContext.imageIndex;
-    VulkanCommandBufferReset(cmdbuf);
+    // VulkanCommandBufferReset(cmdbuf); // NOTE: done by VulkanCommandBufferBegin
     VulkanCommandBufferBegin(cmdbuf, 0, 0, 0);
 
     // Dynamic state

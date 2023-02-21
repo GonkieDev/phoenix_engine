@@ -55,21 +55,15 @@ VulkanCreateDevice(vulkan_context *context, mem_arena *permArena, mem_arena *tem
         if (!transferSharesGraphicsQueue) { queueIndices[qIndex++] = context->device.transferQueueIndex; }
     }
 
-    VkDeviceQueueCreateInfo queueCreateInfos[qIndexCount];
-    // NOTE: use this to replace VLAs?
-    // VkDeviceQueueCreateInfo queueCreateInfos[32];
+    VkDeviceQueueCreateInfo queueCreateInfos[32];
+    PX_ASSERT(ArrayLen(queueCreateInfos) >= qIndexCount);
+    f32 queuePriority = 1.0f;
     for (u32 i = 0; i < qIndexCount; i++)
     {
-        f32 queuePriority = 1.0f;
         queueCreateInfos[i] = {};
         queueCreateInfos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfos[i].queueFamilyIndex = queueIndices[i];
         queueCreateInfos[i].queueCount = 1;
-        // TODO: enabled this for future enhancement
-        /* if (queueIndices[i] == context->device.graphicsQueueIndex) */
-        /* { */
-        /*     queueCreateInfos[i].queueCount = 2; */
-        /* } */
         queueCreateInfos[i].flags = 0;
         queueCreateInfos[i].pNext = 0;
         queueCreateInfos[i].pQueuePriorities = &queuePriority;
@@ -231,8 +225,10 @@ PhysicalDeviceMeetsRequirements(
     VkQueueFamilyProperties queueFamilies[32];
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies);
 
-
     PXINFO("Graphics | Present | Compute | Transfer | Name");
+    // NOTE(gonk): The minTransferScore is so that we can try to get a transfer queue family
+    // that is as isolated as possible. Ideally finding a family queue that is for transfer ONLY
+    // if one exists
     u8 minTransferScore = 255;
     for (u32 i = 0; i < queueFamilyCount; i++)
     {
@@ -384,7 +380,7 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
         return 0;
     }
 
-    VkPhysicalDevice physicalDevices[32];
+    VkPhysicalDevice physicalDevices[16];
     VK_CHECK(vkEnumeratePhysicalDevices(context->instance, &physicalDeviceCount, physicalDevices));
 
     for (u32 i = 0; i < physicalDeviceCount; i++)
@@ -450,7 +446,8 @@ SelectPhysicalDevice(vulkan_context *context, mem_arena *permArena, mem_arena *t
                  memoryHeapIndex < memoryProperties.memoryHeapCount;
                  memoryHeapIndex++)
             {
-                f32 memorySizeGiB = (((f32)memoryProperties.memoryHeaps[memoryHeapIndex].size) / 1024.f / 1024.f / 1024.f);
+                f32 memorySizeGiB = ((f32)memoryProperties.memoryHeaps[memoryHeapIndex].size) /
+                    1024.f / 1024.f / 1024.f;
                 if (memoryProperties.memoryHeaps[memoryHeapIndex].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
                 {
                     PXINFO("Local GPU memory: %.2f GiB", memorySizeGiB);
