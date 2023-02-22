@@ -1,3 +1,7 @@
+// TOP
+#if !defined(VULKAN_SHADER_OBJECT_CPP)
+#define VULKAN_SHADER_OBJECT_CPP
+
 #include <renderer/vulkan_renderer_types.hpp>
 #include <math/math_types.hpp>
 
@@ -123,3 +127,6 @@ VulkanShaderObjectUse(vulkan_context *context, vulkan_shader_object *shader)
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         &shader->pipeline);
 }
+
+#endif // #if !defined(VULKAN_SHADER_OBJECT_CPP)
+// BOTTOM

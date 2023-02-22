@@ -192,5 +192,10 @@ PhoenixInitMemory(s64 permArenaSize, s64 frameArenaSize, engine_state *engineSta
     engineState->frameArena.offset = 0; 
     engineState->frameArena.size   = frameArenaSize; 
 
+#if _DEBUG
+    engineState->permArena.arenaType = MEMORY_ARENA_TYPE_GAME_PERM;
+    engineState->frameArena.arenaType = MEMORY_ARENA_TYPE_GAME_FRAME;
+#endif
+
     return 1;
 }

@@ -4,8 +4,12 @@
 
 #include <core/engine.hpp>
 
-#include <corecrt_malloc.h>
-#include <stdlib.h>
+#if !defined(LOG_MEMORY_ALLOCATION) && defined(_DEBUG)
+#define LOG_MEMORY_ALLOCATION
+#endif // #ifndef LOG_MEMORY_ALLOCATION
+
+PXAPI inline void DEBUGMemoryArenaLogAllocation(mem_arena *arena, s64 size);
+PXAPI inline void DEBUGMemoryArenaLogFree(mem_arena *arena);
 
 PXAPI inline b8
 __IsPtrPowerOf2(uintptr_t x)
@@ -59,6 +63,9 @@ PXMemoryArenaAlloc(mem_arena *arena, s64 size, s64 align = 0)
 
     void *result = (void*)(arena->buf + arena->offset);
     arena->offset += size;
+
+    DEBUGMemoryArenaLogAllocation(arena, size);
+
     return result;
 }
 
@@ -66,6 +73,36 @@ inline void
 PXMemoryArenaClear(mem_arena *arena)
 {
     arena->offset = 0;
+
+    DEBUGMemoryArenaLogFree(arena);
+}
+
+#ifdef LOG_MEMORY_ALLOCATION
+char *g_DEBUGArenaTypeStrings[MEMORY_ARENA_TYPE_COUNT] = {
+    "Game perm",
+    "Game frame"
+};
+#endif // #ifdef LOG_MEMORY_ALLOCATION
+
+PXAPI inline void
+DEBUGMemoryArenaLogAllocation(mem_arena *arena, s64 size)
+{
+#ifdef LOG_MEMORY_ALLOCATION
+    PXDEBUG("Allocation on %s arena, size: %llu (%llu/%llu)",
+            g_DEBUGArenaTypeStrings[arena->arenaType],
+            size,
+            arena->offset,
+            arena->size);
+#endif // #ifdef LOG_MEMORY_ALLOCATION
+}
+
+PXAPI inline void
+DEBUGMemoryArenaLogFree(mem_arena *arena)
+{
+#ifdef LOG_MEMORY_ALLOCATION
+    if (arena->arenaType == MEMORY_ARENA_TYPE_GAME_FRAME) return;
+    PXDEBUG("Freed %s arena (%llu/%llu)", g_DEBUGArenaTypeStrings[arena->arenaType], arena->offset, arena->size);
+#endif // #ifdef LOG_MEMORY_ALLOCATION
 }
 
 #endif // #if !defined(MEMORY_CPP)

@@ -72,7 +72,6 @@ UploadDataRange(
     VulkanBufferDestroy(context, &staging);
 }
 
-// TODO: get rid of allocations in these functions that can be used with variable lengths stack arrays
 PXAPI b8
 InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engineState)
 {
