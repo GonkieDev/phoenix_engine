@@ -8,10 +8,7 @@ VulkanFenceCreate(vulkan_context *context, b8 startSignal, vulkan_fence *fence)
     fence->signaled = startSignal;
     VkFenceCreateInfo createInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
     /* createInfo.pNext = 0; */
-    if (fence->signaled)
-    {
-        createInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    }
+    createInfo.flags = fence->signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
 
     VK_CHECK(vkCreateFence(
         context->device.logicalDevice,

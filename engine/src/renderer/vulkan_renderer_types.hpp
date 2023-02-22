@@ -125,6 +125,7 @@ struct vulkan_swapchain
 
     vulkan_image       depthAttachment;
 
+    // framebuffersCount is equal to imageCount
     vulkan_framebuffer *framebuffers;
 };
 

@@ -70,7 +70,7 @@ PhoenixInit(engine_state *engineState)
     engineState->isRunning = 1;
 
     // Reset frame arena
-    engineState->frameArena.head = (u8*)engineState->frameArena.buf;
+    PXMemoryArenaClear(&engineState->frameArena);
 
     return 1;
 }
@@ -121,9 +121,8 @@ PhoenixRun(engine_state *engineState)
             engineState->lastTime = engineState->clock.elapsed;
 
             // Reset frame arena
-            engineState->frameArena.head = (u8*)engineState->frameArena.buf;
+            PXMemoryArenaClear(&engineState->frameArena);
         }
-
     }
 
     engineState->isRunning = 0;
@@ -179,16 +178,19 @@ PhoenixInitMemory(s64 permArenaSize, s64 frameArenaSize, engine_state *engineSta
 
     if (!base)
     {
+        PXFATAL("Unable to allocate main memory!");
         return 0;
     }
 
-    engineState->permArena.buf  = base;
-    engineState->permArena.head = (u8*)base;
-    engineState->permArena.size = permArenaSize;
-    
-    engineState->frameArena.head = engineState->permArena.head + engineState->permArena.size;
-    engineState->frameArena.buf  = (void *)engineState->frameArena.head; 
-    engineState->frameArena.size = frameArenaSize; 
+    engineState->permArena = {};
+    engineState->permArena.buf    = (u8*)base;
+    engineState->permArena.offset = 0;
+    engineState->permArena.size   = permArenaSize;
+
+    engineState->frameArena = {};
+    engineState->frameArena.buf    = (u8*)(engineState->permArena.buf + engineState->permArena.size);
+    engineState->frameArena.offset = 0; 
+    engineState->frameArena.size   = frameArenaSize; 
 
     return 1;
 }

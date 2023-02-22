@@ -1,3 +1,7 @@
+// TOP
+#if !defined(RENDERER_BACKEND_CPP)
+#define RENDERER_BACKEND_CPP
+
 #include <core/engine.hpp>
 
 #include <renderer/vulkan_renderer_types.hpp>
@@ -196,9 +200,8 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
         &backendContext.mainRenderpass);
 
     // Swapchain framebuffers
-    backendContext.swapchain.framebuffers = (vulkan_framebuffer *)PXMemoryArenaAlloc(
-        &engineState->permArena,
-        sizeof(vulkan_framebuffer) * backendContext.swapchain.imageCount);
+    backendContext.swapchain.framebuffers = PXMemoryArenaAllocStructs(
+        &engineState->permArena, backendContext.swapchain.imageCount, vulkan_framebuffer);
     for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
     {
         backendContext.swapchain.framebuffers[imageIndex] = {};
@@ -210,15 +213,14 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
 
     // Create sync objects
     // Allocate memory
-    backendContext.imageAvailableSemaphores = (VkSemaphore *)PXMemoryArenaAlloc(
-        &engineState->permArena,
-        sizeof(VkSemaphore) * backendContext.swapchain.maxFramesInFlight);
-    backendContext.queueCompleteSemaphores = (VkSemaphore *)PXMemoryArenaAlloc(
-        &engineState->permArena,
-        sizeof(VkSemaphore) * backendContext.swapchain.maxFramesInFlight);
-    backendContext.inFlightFences = (vulkan_fence *)PXMemoryArenaAlloc(
-        &engineState->permArena,
-        sizeof(vulkan_fence) * backendContext.swapchain.maxFramesInFlight);
+    backendContext.imageAvailableSemaphores = PXMemoryArenaAllocStructs(
+            &engineState->permArena, backendContext.swapchain.maxFramesInFlight, VkSemaphore);
+
+    backendContext.queueCompleteSemaphores = PXMemoryArenaAllocStructs(
+        &engineState->permArena, backendContext.swapchain.maxFramesInFlight, VkSemaphore);
+
+    backendContext.inFlightFences = PXMemoryArenaAllocStructs(
+        &engineState->permArena, backendContext.swapchain.maxFramesInFlight, vulkan_fence);
 
     for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.maxFramesInFlight; imageIndex++)
     {
@@ -241,9 +243,8 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
         VulkanFenceCreate(&backendContext, 1, backendContext.inFlightFences + imageIndex);
     }
 
-    backendContext.imagesInFlight = (vulkan_fence **)PXMemoryArenaAlloc(
-        &engineState->permArena,
-        sizeof(vulkan_fence *) * backendContext.swapchain.imageCount);
+    backendContext.imagesInFlight = PXMemoryArenaAllocStructs(
+            &engineState->permArena, backendContext.swapchain.imageCount, vulkan_fence*);
     for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
     {
         backendContext.imagesInFlight[imageIndex] = 0;
@@ -525,9 +526,10 @@ RendererBackendEndFrame(f32 deltaTime, renderer_backend *backend)
     // Make sure previous frame is not using current image
     if (backendContext.imagesInFlight[backendContext.imageIndex] != VK_NULL_HANDLE)
     {
+        vulkan_fence *fence = backendContext.imagesInFlight[backendContext.imageIndex];
         VulkanFenceWait(
             &backendContext,
-            backendContext.imagesInFlight[backendContext.imageIndex],
+            fence,
             UINT64_MAX);
     }
 
@@ -610,8 +612,8 @@ BackendCreateCommandBuffers(renderer_backend *backend, mem_arena *permArena)
 {
     if (!backendContext.graphicsCommandBuffers)
     {
-        backendContext.graphicsCommandBuffers = (vulkan_command_buffer *)PXMemoryArenaAlloc(
-            permArena, sizeof(vulkan_command_buffer) * backendContext.swapchain.imageCount);
+        backendContext.graphicsCommandBuffers = PXMemoryArenaAllocStructs(
+                permArena, backendContext.swapchain.imageCount, vulkan_command_buffer);
 
         for (u32 imageIndex = 0; imageIndex < backendContext.swapchain.imageCount; imageIndex++)
         {
@@ -787,3 +789,6 @@ BackendCreateBuffers(vulkan_context *context)
 
     return 1;
 }
+
+#endif // #if !defined(RENDERER_BACKEND_CPP)
+// BOTTOM

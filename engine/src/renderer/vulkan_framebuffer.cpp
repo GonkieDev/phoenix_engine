@@ -21,8 +21,7 @@ VulkanFramebufferCreate(
     for (u32 attachmentIndex = 0; attachmentIndex < attachmentCount; attachmentIndex++)
     {
         /* outFramebuffer->attachments[attachmentIndex] = attachments[attachmentIndex]; */
-        VkImageView _view = attachments[attachmentIndex];
-        outFramebuffer->attachments[attachmentIndex] = _view;
+        *(outFramebuffer->attachments + attachmentIndex) = attachments[attachmentIndex];
     }
 
     outFramebuffer->renderpass = renderpass;

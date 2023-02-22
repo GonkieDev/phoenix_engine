@@ -4,17 +4,16 @@
 Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulkan. It also provides platform independent input.
 
 ## FIXES:
-- !!!! FIX PXMemoryArenaAllocate, needs to be aligned properly
 
 ## TODOs:
 
 ### Memory:
 - memory logging
-- init multiple arenas in same contiguous block
 - Specific memory arena for renderer?
 - memory allocate multiple structs at the same time - macro
 - add casting to the allocation macro
 - clear frame arena after initialisation and every frame
+- find out why does it crash when using default alignment size bigger than `2 * sizeof(void *)`
 
 ### Vulkan:
 - move functions to vk helpers

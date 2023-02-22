@@ -30,6 +30,7 @@ typedef u64 s64;
 
 static_assert(sizeof(f32) == 4, "f32 must me 4 bytes!");
 static_assert(sizeof(f64) == 8, "f64 must me 8 bytes!");
+static_assert(sizeof(s64) == 8, "s64 must me 8 bytes!");
 
 
 #define global_var static
