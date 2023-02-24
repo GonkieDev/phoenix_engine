@@ -13,6 +13,9 @@ struct logger_system_state
 };
 
 void
+LogOutput(log_level level, char *message, ...);
+
+void
 ReportAssertionFailure(char *expression, char *message, char *file, i32 line)
 {
 #if _DEBUG
@@ -54,15 +57,18 @@ LogOutput(log_level level, char *message, ...)
 }
 
 internal b8
-InitLogging()
+InitLogging(mem_arena *permArena, logger_state *loggerState)
 {
-    // TODO(gonk): create log file, and other stuff needed for logging 
+    /* PXDEBUG("Logger initialised with bufSize of %d KiB", loggerState->bufSize / 1024); */
+    /* loggerState->buf = (u8*)PXMemoryArenaAlloc(permArena, sizeof(loggerState->bufSize)); */
+
     return 1;
 }
 
 internal void
-ShutdownLogging()
+ShutdownLogging(logger_state *loggerState)
 {
+    // Write logger buffer to file
 }
 
 

@@ -35,12 +35,8 @@ __AlignForward(uintptr_t ptr, s64 align)
 	return ptr;
 }
 
-#define PXMemoryArenaAllocStruct(arena, s) PXMemoryArenaAlloc(arena, sizeof(s))
-#define PXMemoryArenaAllocStructs(arena, count, s) (s*)PXMemoryArenaAlloc(arena, sizeof(s)*count)
-
-PXAPI inline void *
-/* PXMemoryArenaAlloc(mem_arena *arena, s64 size, s64 align = (sizeof(void*)) ) */
-PXMemoryArenaAlloc(mem_arena *arena, s64 size, s64 align = 0)
+inline void *
+PXMemoryArenaAlloc(mem_arena *arena, s64 size, s64 align)
 {
 #if 0
 	// Align 'offset' forward to the specified alignment

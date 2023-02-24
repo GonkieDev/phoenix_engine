@@ -12,6 +12,15 @@
 #define LOG_TRACE_ENABLED 0
 #endif
 
+struct logger_state
+{
+    // NOTE: buf gets allocate from memory arena and will be circular (to keep cosntant size)? 
+    //  circular meaning that once the end of the buffer is reached, the start will be overwritten
+    //  since we probably only care about logging if there's crashes?
+    u8 *buf;
+    u64 bufSize = MEGABYTES(1);
+};
+
 typedef enum log_level {
     LOG_LEVEL_FATAL,
     LOG_LEVEL_ERROR,
@@ -53,5 +62,5 @@ typedef enum log_level {
 
 
 void LogOutput(log_level level, char *message, ...);
-internal b8 InitLogging();
-internal void ShutdownLogging();
+PXAPI b8 InitLogging(struct mem_arena *permArena, logger_state *loggerState);
+PXAPI void ShutdownLogging(logger_state *loggerState);

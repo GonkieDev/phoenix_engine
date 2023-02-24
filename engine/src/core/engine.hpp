@@ -36,6 +36,11 @@ struct engine_state
     mem_arena permArena;  // NOTE: mem arena that only gets reset at the end of the program's lifetime
     mem_arena frameArena; // NOTE: mem arena that gets reset every frame (also after initialisation,
                           // thus it can be used for temporary memory needed for initialisation)
+#if 0 // defined(_DEBUG)
+    mem_arena debugArena; // NOTE: used for debugging allocations that don't happen in non debug builds
+#endif // #if defined(_DEBUG)
+
+    logger_state loggerState;
 
     platform_state *platformState;
     game_state *gameState;

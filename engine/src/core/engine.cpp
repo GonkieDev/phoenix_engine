@@ -15,7 +15,7 @@ PXAPI b8 PhoenixInitMemory(s64 permArenaSize, s64 frameArenaSize, engine_state *
 PXAPI b8 
 PhoenixInit(engine_state *engineState)
 {
-    InitLogging();
+    InitLogging(&engineState->permArena, &engineState->loggerState);
 
     //
     // Configs
@@ -137,7 +137,7 @@ PhoenixShutdown(engine_state *engineState)
 
     RendererShutdown(engineState);
 
-    ShutdownLogging();
+    ShutdownLogging(&engineState->loggerState);
 }
 
 PXAPI inline void
