@@ -8,13 +8,13 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 - find out why does it crash when using default alignment size bigger than `2 * sizeof(void *)`
 
 ## TODOs:
+- settings file
 
 ### Memory:
 - Specific memory arena for renderer?
 
 ### Vulkan:
 - move functions to vk helpers
-- vulkan setup
 - vulkan custom allocator
 - device requirements should be driven by game / engine
 - configurable vsync
@@ -24,11 +24,9 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 - go through the things that can be reallocated and make sure they're being initalised to 0
 
 ### Platform:
-- minimise windows results in `engineState.suspended = 1`
 
 ### Input:
 - provide controller deadzone as parameters 
-- settings file
 - add more keys to win32 input switch statement
 - mouse dx, dy
 - FIX: sometimes inputs get processed twice?

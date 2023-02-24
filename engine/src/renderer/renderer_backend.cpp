@@ -394,18 +394,12 @@ ShutdownRendererBackend(renderer_backend *backend)
 PXAPI void
 RendererBackendOnResized(u32 width, u32 height, renderer_backend *backend)
 {
-    /* backendContext.framebufferWidth  = width; */
-    /* backendContext.framebufferHeight = height; */
     cachedFramebufferWidth  = width;
     cachedFramebufferHeight = height;
     backendContext.framebufferSizedGeneration++;
 
     PXINFO("Vulkan renderer backend resized: w/h/gen: %i/%i/%llu", width, height,
             backendContext.framebufferSizedGeneration);
-
-    // NOTE: do we want to cache the framebuffer w/h?
-
-    // TODO: finish this
 }
 
 PXAPI b8

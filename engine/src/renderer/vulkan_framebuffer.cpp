@@ -53,7 +53,6 @@ VulkanFramebufferDestroy(vulkan_context *context, vulkan_framebuffer *framebuffe
     // Since this memory space is a permanent arena, it'll be cleared at the end by either
     // a memory free for the whole arena or by the OS
 
-    framebuffer->attachments = 0;
     framebuffer->handle = 0;
     framebuffer->attachmentCount = 0;
     framebuffer->renderpass = 0;
