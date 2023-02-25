@@ -514,7 +514,7 @@ PlatformReadEntireFile(char *filename)
 }
 
 b8 
-PlatformWriteEntireFile(char *filename, u32 memorySize, void *memory)
+PlatformWriteEntireFile(char *filename, u32 sourceBufferSize, void *sourceBuffer)
 {
     b32 result = 0;
     
@@ -527,13 +527,13 @@ PlatformWriteEntireFile(char *filename, u32 memorySize, void *memory)
     }
 
     DWORD bytesWritten;
-    if(!WriteFile(fileHandle, memory, memorySize, &bytesWritten, 0))
+    if(!WriteFile(fileHandle, sourceBuffer, sourceBufferSize, &bytesWritten, 0))
     {
         PXERROR("FILE: Write to '%s' failed.", filename);
     }
     else
     {
-        result = (bytesWritten == memorySize);
+        result = (bytesWritten == sourceBufferSize);
     }
 
     CloseHandle(fileHandle);
