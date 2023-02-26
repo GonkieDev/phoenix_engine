@@ -37,7 +37,6 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 - Platform agnostic file handle
 
 ### Logging:
-- Log file
 - Should logging be debug mode only?
 
 ### Low priority TODOs:
