@@ -2,6 +2,8 @@
 
 #include "../defines.hpp"
 
+#define LOG_OUTPUT_FILENAME "logs.txt"
+
 #define LOG_WARN_ENABLED 1
 #define LOG_INFO_ENABLED 1
 #define LOG_DEBUG_ENABLED 1
@@ -18,7 +20,8 @@ struct logger_state
     //  circular meaning that once the end of the buffer is reached, the start will be overwritten
     //  since we probably only care about logging if there's crashes?
     u8 *buf;
-    u64 bufSize = MEGABYTES(1);
+    u32 bufCharCount = 200;
+    u32 currChar; 
 };
 
 typedef enum log_level {
@@ -62,5 +65,11 @@ typedef enum log_level {
 
 
 void LogOutput(log_level level, char *message, ...);
+
+// NOTE: allocates circular buffer of loggerState->bufCharCount
 PXAPI b8 InitLogging(struct mem_arena *permArena, logger_state *loggerState);
-PXAPI void ShutdownLogging(logger_state *loggerState);
+
+// Write logger buffer to file
+// @params arena: this is needed as we perform some allocation so we can
+//  format the string, this the allocated buffer for the logs is a circular buffer
+PXAPI void ShutdownLogging(mem_arena *arena, logger_state *loggerState);

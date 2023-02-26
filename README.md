@@ -12,6 +12,7 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 
 ### Memory:
 - Specific memory arena for renderer?
+- write own `memset`
 
 ### Vulkan:
 - move functions to vk helpers
@@ -53,6 +54,7 @@ Phoenix engine is a rendering engine. It is a thin layer of abstraction for Vulk
 ## Reminders for myself
 
 ### Tags to look for:
-`xxmemoryxx`: memory related stuff
-`xxoptimisationxx`: optimisation related stuff
-`FIXME`
+- `xxmemoryxx`: memory related stuff
+- `xxoptimisationxx`: optimisation related stuff
+- `FIXME`
+- `PXRELEASE` : release build preprocessor macro

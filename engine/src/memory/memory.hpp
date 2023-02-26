@@ -2,6 +2,10 @@
 
 #include <defines.hpp>
 
+// ==========================================================================  
+//                                Structs
+// ==========================================================================  
+
 #if _DEBUG
 typedef enum 
 {
@@ -23,9 +27,16 @@ struct mem_arena
 #endif
 };
 
+
+// ==========================================================================  
+//                          Function Declarations
+// ==========================================================================  
+
 #define PXMemoryArenaAllocStruct(arena, s) PXMemoryArenaAlloc(arena, sizeof(s))
 #define PXMemoryArenaAllocStructs(arena, count, s) (s*)PXMemoryArenaAlloc(arena, sizeof(s)*count)
 
 inline void *PXMemoryArenaAlloc(mem_arena *arena, s64 size, s64 align = 0 /*(sizeof(void*))*/);
 
 inline void PXMemoryArenaClear(mem_arena *arena);
+
+inline void PXMemoryClean(void *buf, u64 count);

@@ -24,3 +24,18 @@ StringFormat(char *buffer, u32 bufferSize, const char *format, ...)
     vsnprintf(buffer, bufferSize, format, argPtr);
     va_end(argPtr);
 }
+
+u64
+StringCopy(char *dest, u64 destCharCount, char *src, u64 srcCharCount)
+{
+    u64 result = 0;
+    for (u64 i = 0; i < destCharCount && i < srcCharCount; i++)
+    {
+        if (src[i] == 0)
+            break;
+        dest[i] = src[i];
+        result++;
+    }
+
+    return result;
+}

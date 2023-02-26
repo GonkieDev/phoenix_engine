@@ -7,10 +7,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-struct logger_system_state
-{
-    read_file_result readResult;
-};
+logger_state *PX_gLoggerState;
 
 void
 LogOutput(log_level level, char *message, ...);
@@ -42,7 +39,7 @@ LogOutput(log_level level, char *message, ...)
         "[TRACE]: "
     };
 
-    char formattedMessage[16000] = {};
+    char formattedMessage[3000] = {};
 
     __builtin_va_list argPtr;
     va_start(argPtr, message);
@@ -53,22 +50,85 @@ LogOutput(log_level level, char *message, ...)
     snprintf(outMessage, ArrayLen(outMessage), "%s%s\n", logLevelStrings[level], formattedMessage);
 
     PlatformDebugOutput(outMessage, level);
+
+    // Simple write to PX_gLoggerState buffer
+    // NOTE: this is probably temporary and can be improved
+    if (PX_gLoggerState && PX_gLoggerState->buf)
+    {
+        u64 outMessageLen = StringLength(outMessage);
+        u64 charactersLeft = PX_gLoggerState->bufCharCount - PX_gLoggerState->currChar - 1;
+        if (outMessageLen > charactersLeft)
+        {
+            PX_gLoggerState->currChar = 0;
+            charactersLeft = PX_gLoggerState->bufCharCount - 1;
+        }
+
+        // Subtract one to ignore null characters
+        PX_gLoggerState->currChar += StringCopy(
+            (char*)PX_gLoggerState->buf + PX_gLoggerState->currChar,
+            charactersLeft,
+            outMessage,
+            outMessageLen);
+    }
+
 #endif // !_DEBUG
 }
 
 internal b8
 InitLogging(mem_arena *permArena, logger_state *loggerState)
 {
-    /* PXDEBUG("Logger initialised with bufSize of %d KiB", loggerState->bufSize / 1024); */
-    /* loggerState->buf = (u8*)PXMemoryArenaAlloc(permArena, sizeof(loggerState->bufSize)); */
+    PX_gLoggerState = loggerState;
+
+    PXDEBUG("Logger initialised with bufCharCount of %llu", loggerState->bufCharCount);
+    loggerState->buf = (u8*)PXMemoryArenaAlloc(permArena, loggerState->bufCharCount);
 
     return 1;
 }
 
 internal void
-ShutdownLogging(logger_state *loggerState)
+ShutdownLogging(mem_arena *arena, logger_state *loggerState)
 {
-    // Write logger buffer to file
+    if (!loggerState->buf)
+    {
+        return;
+    }
+
+    // NOTE: this is safe as the buffer all chars in the buffer are initialised to 0
+    b8 hasLooped =
+        loggerState->currChar == loggerState->bufCharCount-1 ||
+        loggerState->buf[loggerState->currChar + 1] != 0;
+
+    char *tempBuffer = (char *)PXMemoryArenaAlloc(arena, loggerState->bufCharCount);
+    PXMemoryClean(tempBuffer, loggerState->bufCharCount);
+
+    u64 loggerBufLen = loggerState->bufCharCount - 1;
+
+    // Copy logger buffer to temp buffer, looping it so that it's in order when written to file
+
+    if (hasLooped)
+    {
+        u64 charsWritten = StringCopy(
+            tempBuffer,
+            loggerBufLen,
+            (char*)(loggerState->buf + loggerState->currChar),
+            loggerBufLen - loggerState->currChar);
+
+        StringCopy(
+            tempBuffer + charsWritten,
+            loggerBufLen - charsWritten,
+            (char*)loggerState->buf,
+            loggerBufLen);
+    }
+    else
+    {
+        StringCopy(
+            tempBuffer,
+            loggerBufLen,
+            (char*)loggerState->buf,
+            loggerBufLen);
+    }
+
+    PlatformWriteEntireFile(LOG_OUTPUT_FILENAME, loggerState->bufCharCount, tempBuffer);
 }
 
 

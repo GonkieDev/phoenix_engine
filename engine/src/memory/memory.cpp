@@ -101,5 +101,12 @@ DEBUGMemoryArenaLogFree(mem_arena *arena)
 #endif // #ifdef LOG_MEMORY_ALLOCATION
 }
 
+inline void
+PXMemoryClean(void *buf, u64 count)
+{
+    // TODO: write own memset
+    memset(buf, 0, count);
+}
+
 #endif // #if !defined(MEMORY_CPP)
 // BOTTOM

@@ -15,8 +15,6 @@ PXAPI b8 PhoenixInitMemory(s64 permArenaSize, s64 frameArenaSize, engine_state *
 PXAPI b8 
 PhoenixInit(engine_state *engineState)
 {
-    InitLogging(&engineState->permArena, &engineState->loggerState);
-
     //
     // Configs
     //
@@ -32,22 +30,24 @@ PhoenixInit(engine_state *engineState)
     engineState->gameState = gameConfig.gameState;
 
     //
-    // Platform
-    //
-
-    if (!PlatformInit(gameConfig.gameName, engineState))
-    {
-        PXFATAL("Platform failed to create!");
-        return 0;
-    }
-
-    //
     // Memory
     //
 
     if (!PhoenixInitMemory(gameConfig.permArenaSize, gameConfig.frameArenaSize, engineState))
     {
         PXFATAL("Failed to allocate memory required!");
+        return 0;
+    }
+
+    InitLogging(&engineState->permArena, &engineState->loggerState);
+
+    //
+    // Platform
+    //
+
+    if (!PlatformInit(gameConfig.gameName, engineState))
+    {
+        PXFATAL("Platform failed to create!");
         return 0;
     }
 
@@ -137,7 +137,8 @@ PhoenixShutdown(engine_state *engineState)
 
     RendererShutdown(engineState);
 
-    ShutdownLogging(&engineState->loggerState);
+    // NOTE: it's fine to use permArena here since nothign should be using that data at this point
+    ShutdownLogging(&engineState->permArena, &engineState->loggerState);
 }
 
 PXAPI inline void
