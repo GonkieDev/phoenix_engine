@@ -24,7 +24,6 @@ union v3
     };
 };
 
-
 union v4
 {
 /* #ifdef PXUSE_SIMD */

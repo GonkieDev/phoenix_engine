@@ -270,10 +270,10 @@ InitRendererBackend(char *appName, renderer_backend *backend, engine_state *engi
     verts[2].p = {{ -0.5f, -0.5f, 0.f }};
     verts[3].p = {{  0.5f,  0.5f, 0.f }};
 
-    verts[0].c = {{ 0.0f, 0.0f, 1.0f, 1.0f }};
-    verts[1].c = {{ 0.0f, 0.0f, 1.0f, 1.0f }};
-    verts[2].c = {{ 0.0f, 0.0f, 1.0f, 1.0f }};
-    verts[3].c = {{ 0.0f, 0.0f, 1.0f, 1.0f }};
+    verts[0].c = {{ 0.0f, 1.0f, 1.0f, 1.0f }};
+    verts[1].c = {{ 0.0f, 1.0f, 1.0f, 1.0f }};
+    verts[2].c = {{ 0.0f, 1.0f, 1.0f, 1.0f }};
+    verts[3].c = {{ 0.0f, 1.0f, 1.0f, 1.0f }};
 
     const u32 indexCount = 6;
     u32 indices[indexCount] = { 0, 1, 2, 0, 3, 1 };

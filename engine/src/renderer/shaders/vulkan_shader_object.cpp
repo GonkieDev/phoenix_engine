@@ -60,7 +60,8 @@ VulkanShaderObjectCreate(vulkan_context *context, vulkan_shader_object *outShade
     };
 
     u64 sizes[attributeCount] = {
-        sizeof(v3),
+        /* sizeof(v3), */
+        sizeof(v4),
         sizeof(v4)
     };
 
